@@ -54,65 +54,81 @@ enum PaymentMethod {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  name             String
-  passwordHash     String
-  role             Role           @default(CUSTOMER)
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  name                String
+  passwordHash        String               @map("password_hash")
+  role                Role                 @default(CUSTOMER)
+  isActive            Boolean              @default(true) @map("is_active")
+  resetToken          String?              @map("reset_token")
+  resetTokenExpiry    DateTime?            @map("reset_token_expiry")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
 
-  subscriptions    Subscription[]
-  invoices         Invoice[]
+  subscriptions       Subscription[]
+  invoices            Invoice[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
 }
 
 model Product {
-  id             String           @id @default(uuid())
-  name           String
-  type           String           @default("Software")
-  salesPrice     Float            @default(0.0)
-  costPrice      Float            @default(0.0)
-  notes          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id            String                  @id @default(uuid())
+  name          String
+  type          String                  @default("Software")
+  salesPrice    Float                   @default(0.0)
+  costPrice     Float                   @default(0.0)
+  notes         String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
-  variants       ProductVariant[]
-  subLines       SubscriptionLine[]
-  invoiceLines   InvoiceLine[]
-  templateLines  QuotationTemplateLine[]
-  discounts      DiscountRule[]
+  variants      ProductVariant[]
+  subLines      SubscriptionLine[]
+  invoiceLines  InvoiceLine[]
+  templateLines QuotationTemplateLine[]
+  discounts     DiscountRule[]
 }
 
 model ProductVariant {
-  id          String   @id @default(uuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name        String   // e.g. "Odoo Brand"
-  extraPrice  Float    @default(0.0) // e.g. +560.0
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String   // e.g. "Odoo Brand"
+  extraPrice Float    @default(0.0) // e.g. +560.0
+  createdAt  DateTime @default(now())
 
-  subLines    SubscriptionLine[]
+  subLines   SubscriptionLine[]
 }
 
 model Plan {
-  id             String           @id @default(uuid())
-  name           String
-  cost           Float            @default(0.0)
-  frequency      BillingFrequency @default(MONTHLY)
-  minQuantity    Int              @default(1)
-  startDate      DateTime?
-  endDate        DateTime?
-  autoClose      Boolean          @default(true)
-  canCloseEarly  Boolean          @default(true)
-  canPause       Boolean          @default(true)
-  canRenew       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id            String              @id @default(uuid())
+  name          String
+  cost          Float               @default(0.0)
+  frequency     BillingFrequency    @default(MONTHLY)
+  minQuantity   Int                 @default(1)
+  startDate     DateTime?
+  endDate       DateTime?
+  autoClose     Boolean             @default(true)
+  canCloseEarly Boolean             @default(true)
+  canPause      Boolean             @default(true)
+  canRenew      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
-  subscriptions  Subscription[]
-  templates      QuotationTemplate[]
+  subscriptions Subscription[]
+  templates     QuotationTemplate[]
 }
 
 model QuotationTemplate {
@@ -234,12 +250,12 @@ model DiscountRule {
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  invoiceId     String
-  invoice       Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  method        PaymentMethod @default(BANK_TRANSFER)
-  amount        Float         @default(0.0)
-  paymentDate   DateTime      @default(now())
-  note          String?
-  createdAt     DateTime      @default(now())
+  id          String        @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  method      PaymentMethod @default(BANK_TRANSFER)
+  amount      Float         @default(0.0)
+  paymentDate DateTime      @default(now())
+  note        String?
+  createdAt   DateTime      @default(now())
 }
