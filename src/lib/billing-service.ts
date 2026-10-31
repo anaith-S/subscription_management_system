@@ -248,7 +248,8 @@ async function billPeriodInTx(
     subtotalCents += amountCents;
     taxCents += percentOf(amountCents - discount.perLineCents[i], line.taxRate);
 
-    const variantLabel = line.variant ? ` (${line.variant.name})` : "";
+    const variantName = line.variant?.name ?? line.variant?.value;
+    const variantLabel = variantName ? ` (${variantName})` : "";
     return {
       productId: line.productId,
       description: `${line.product.name}${variantLabel} - ${subscription.plan.name}`,

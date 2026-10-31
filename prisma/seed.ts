@@ -184,7 +184,7 @@ async function main() {
   console.log("✅ Seeded taxes and discount rules");
 
   // 5. Create Quotation Template
-  const odooVariant = prodSoftware.variants.find((v) => v.name.includes("Odoo"));
+  const odooVariant = prodSoftware.variants.find((v) => v.name?.includes("Odoo"));
   await prisma.quotationTemplate.create({
     data: {
       name: "Enterprise Software + Odoo Brand Template",

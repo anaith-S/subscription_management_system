@@ -18,6 +18,9 @@ const STAFF_AREA = [
   /^\/subscriptions(\/|$)/,
   /^\/quotation-templates(\/|$)/,
   /^\/invoices(\/|$)/,
+  /^\/products(\/|$)/,
+  /^\/plans(\/|$)/,
+  /^\/discounts(\/|$)/,
 ];
 const CUSTOMER_AREA = /^\/portal(\/|$)/;
 
@@ -66,6 +69,9 @@ export const config = {
     "/subscriptions/:path*",
     "/quotation-templates/:path*",
     "/invoices/:path*",
+    "/products/:path*",
+    "/plans/:path*",
+    "/discounts/:path*",
     "/admin/:path*",
     "/portal/:path*",
   ],
