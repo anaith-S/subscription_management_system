@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
+import Pager from "@/components/ui/Pager";
 import { useAuth } from "@/context/AuthContext";
 import {
   Repeat,
@@ -18,6 +19,7 @@ import {
   RefreshCw,
   Sparkles,
   Zap,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -63,6 +65,20 @@ export default function SubscriptionsPage() {
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const PAGE_SIZE = 25;
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [refData, setRefData] = useState<ReferenceData | null>(null);
 
@@ -84,11 +100,14 @@ export default function SubscriptionsPage() {
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const url = filterStatus !== "ALL" ? `/api/subscriptions?status=${filterStatus}` : "/api/subscriptions";
+      const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+      if (filterStatus !== "ALL") params.set("status", filterStatus);
+      if (debouncedSearch) params.set("q", debouncedSearch);
+      const url = `/api/subscriptions?${params.toString()}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.subscriptions) {
-        setSubscriptions(data.subscriptions);
+        setSubscriptions(data.subscriptions); setTotal(data.total ?? data.subscriptions.length);
       }
     } catch (err) {
       console.error("Failed to load subscriptions", err);
@@ -125,8 +144,13 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     fetchSubscriptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, page, debouncedSearch]);
+
+  useEffect(() => {
     fetchReferenceData();
-  }, [filterStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle status transition
   const handleTransition = async (subscriptionId: string, targetStatus: string) => {
@@ -288,19 +312,10 @@ export default function SubscriptionsPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                <Repeat className="w-5 h-5" />
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Subscriptions & Recurring Orders
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Manage quotes, contracts, and subscription life cycles from Draft to Active billing.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Subscriptions</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Every customer subscription, from draft through quotation and confirmation to active and closed.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -317,16 +332,16 @@ export default function SubscriptionsPage() {
                 <button
                   onClick={handleRunBilling}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-marigold hover:bg-amber-400 text-deep transition-colors disabled:opacity-60"
                   title="Generate recurring invoices for all active subscriptions due today"
                 >
                   <Zap className="w-4 h-4" />
-                  Run Billing
+                  Run billing day
                 </button>
 
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm transition"
                 >
                   <Plus className="w-4 h-4" />
                   New Subscription
@@ -342,7 +357,10 @@ export default function SubscriptionsPage() {
             {["ALL", "ACTIVE", "CONFIRMED", "QUOTATION", "DRAFT", "PAUSED", "CLOSED"].map((st) => (
               <button
                 key={st}
-                onClick={() => setFilterStatus(st)}
+                onClick={() => {
+                  setFilterStatus(st);
+                  setPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   filterStatus === st
                     ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-zinc-200 dark:border-zinc-700 font-semibold"
@@ -354,6 +372,18 @@ export default function SubscriptionsPage() {
             ))}
           </div>
 
+          <div className="flex flex-1 items-center justify-end gap-2">
+          <label className="relative min-w-[220px] max-w-[340px] flex-1">
+            <span className="sr-only">Search subscriptions</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by number, customer or email"
+              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-[13px] placeholder:text-zinc-400 focus:border-indigo-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
           <button
             onClick={fetchSubscriptions}
             className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition"
@@ -361,6 +391,7 @@ export default function SubscriptionsPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
+          </div>
         </div>
 
         {/* Subscriptions Table / Cards */}
@@ -384,7 +415,7 @@ export default function SubscriptionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-500 uppercase tracking-wider text-[11px]">
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-500 text-[11px]">
                     <th className="py-3.5 px-4 font-semibold">Subscription #</th>
                     <th className="py-3.5 px-4 font-semibold">Customer</th>
                     <th className="py-3.5 px-4 font-semibold">Plan & Billing</th>
@@ -552,6 +583,9 @@ export default function SubscriptionsPage() {
               </table>
             </div>
           )}
+          {total > 0 && (
+            <Pager page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} noun="subscriptions" />
+          )}
         </div>
 
         {/* Modal: Create Subscription */}
@@ -575,7 +609,7 @@ export default function SubscriptionsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Customer selection */}
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Customer *
                     </label>
                     <select
@@ -594,7 +628,7 @@ export default function SubscriptionsPage() {
 
                   {/* Plan selection */}
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Billing Plan *
                     </label>
                     <select
@@ -613,7 +647,7 @@ export default function SubscriptionsPage() {
 
                   {/* Payment Terms */}
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Payment Terms
                     </label>
                     <select
@@ -629,7 +663,7 @@ export default function SubscriptionsPage() {
 
                   {/* Discount Code */}
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Discount Code (Optional)
                     </label>
                     <input
@@ -645,7 +679,7 @@ export default function SubscriptionsPage() {
                 {/* Line Items */}
                 <div className="pt-2">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    <label className="text-xs font-bold text-zinc-500">
                       Product Lines & Variants
                     </label>
                     <button
@@ -742,7 +776,7 @@ export default function SubscriptionsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm transition"
                   >
                     Create Subscription (Draft)
                   </button>
@@ -788,7 +822,7 @@ export default function SubscriptionsPage() {
 
               <button
                 onClick={() => setIsBillingModalOpen(false)}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm transition"
               >
                 Done
               </button>

@@ -6,193 +6,180 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard,
-  UserPlus,
+  Users,
   Package,
   Layers,
   Repeat,
   Receipt,
   Percent,
   CreditCard,
-  AlertTriangle,
+  AlarmClock,
   Home,
-  UserCheck,
-  ShieldAlert,
-  Briefcase,
-  HelpCircle,
+  UserCircle,
   FileText,
+  X,
+  type LucideIcon,
 } from "lucide-react";
+import { Wordmark } from "@/components/brand/Logo";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const BILLING: NavSection = {
+  title: "Billing",
+  items: [
+    { name: "Subscriptions", href: "/subscriptions", icon: Repeat },
+    { name: "Invoices", href: "/invoices", icon: Receipt },
+    { name: "Overdue", href: "/invoices/overdue", icon: AlarmClock },
+    { name: "Payments", href: "/payments", icon: CreditCard },
+  ],
+};
+
+const NAV: Record<string, NavSection[]> = {
+  ADMIN: [
+    { title: "Overview", items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] },
+    BILLING,
+    {
+      title: "Catalog",
+      items: [
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Plans", href: "/plans", icon: Layers },
+        { name: "Quotation templates", href: "/quotation-templates", icon: FileText },
+        { name: "Discounts and taxes", href: "/discounts", icon: Percent },
+      ],
+    },
+    { title: "Team", items: [{ name: "Staff", href: "/admin/staff", icon: Users }] },
+  ],
+  STAFF: [
+    { title: "Overview", items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] },
+    BILLING,
+    {
+      title: "Catalog",
+      items: [
+        { name: "Products", href: "/products", icon: Package },
+        { name: "Plans", href: "/plans", icon: Layers },
+        { name: "Quotation templates", href: "/quotation-templates", icon: FileText },
+      ],
+    },
+  ],
+  CUSTOMER: [
+    {
+      title: "My account",
+      items: [
+        { name: "Overview", href: "/portal", icon: Home },
+        { name: "Subscriptions", href: "/portal#subscriptions", icon: Repeat },
+        { name: "Invoices", href: "/portal#invoices", icon: Receipt },
+        { name: "Profile", href: "/portal#profile", icon: UserCircle },
+      ],
+    },
+  ],
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: "Administrator",
+  STAFF: "Operations team",
+  CUSTOMER: "Customer account",
+};
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-
   const role = user?.role || "CUSTOMER";
+  const sections = NAV[role] ?? NAV.CUSTOMER;
 
-  // Navigation configurations based on role
-  const getNavItems = () => {
-    if (role === "ADMIN") {
-      return [
-        {
-          title: "Core Administration",
-          items: [
-            { name: "Executive Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Manage Staff", href: "/admin/staff", icon: UserPlus, highlight: true },
-          ],
-        },
-        {
-          title: "Catalog & Plans",
-          items: [
-            { name: "Products & Variants", href: "/products", icon: Package },
-            { name: "Billing Plans", href: "/plans", icon: Layers },
-            { name: "Quotation Templates", href: "/quotation-templates", icon: FileText },
-            { name: "Discounts & Taxes", href: "/discounts", icon: Percent },
-          ],
-        },
-        {
-          title: "Billing & Operations",
-          items: [
-            { name: "All Subscriptions", href: "/subscriptions", icon: Repeat },
-            { name: "All Invoices", href: "/invoices", icon: Receipt },
-            { name: "Payments Received", href: "/payments", icon: CreditCard },
-          ],
-        },
-      ];
-    }
-
-    if (role === "STAFF") {
-      return [
-        {
-          title: "Daily Operations",
-          items: [
-            { name: "Subscriptions & Quotes", href: "/subscriptions", icon: Repeat },
-            { name: "Quotation Templates", href: "/quotation-templates", icon: FileText },
-            { name: "Invoices Management", href: "/invoices", icon: Receipt },
-            { name: "Overdue Invoices", href: "/invoices/overdue", icon: AlertTriangle },
-            { name: "Record Payments", href: "/payments", icon: CreditCard },
-          ],
-        },
-        {
-          title: "Catalog Reference",
-          items: [
-            { name: "Products List", href: "/products", icon: Package },
-            { name: "Plans Available", href: "/plans", icon: Layers },
-          ],
-        },
-      ];
-    }
-
-    // CUSTOMER role
-    return [
-      {
-        title: "Self-Service Portal",
-        items: [
-          { name: "Portal Overview", href: "/portal", icon: Home },
-          { name: "My Subscriptions", href: "/portal#subscriptions", icon: Repeat },
-          { name: "My Invoices", href: "/portal#invoices", icon: Receipt },
-          { name: "Account Details", href: "/portal#profile", icon: UserCheck },
-        ],
-      },
-    ];
-  };
-
-  const navSections = getNavItems();
+  // The most specific matching link wins, so /invoices/overdue doesn't also
+  // light up /invoices.
+  const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href.split("#")[0]));
+  const activeHref = allHrefs
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-zinc-950/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-zinc-950/50 backdrop-blur-[2px] lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-200 bg-zinc-50/95 backdrop-blur transition-transform duration-200 dark:border-zinc-800 dark:bg-zinc-950 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col bg-deep text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        aria-label="Main navigation"
       >
-        {/* Brand header on mobile sidebar */}
-        <div className="flex h-16 items-center border-b border-zinc-200 px-6 dark:border-zinc-800 lg:hidden">
-          <span className="text-base font-bold text-zinc-900 dark:text-white">
-            Brightloop Navigation
-          </span>
+        <div className="flex h-16 items-center justify-between px-5">
+          <Link href={role === "CUSTOMER" ? "/portal" : "/dashboard"} onClick={onClose}>
+            <Wordmark tone="light" />
+          </Link>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Close navigation"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Current Role Banner */}
-        <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-100/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-2">
-            {role === "ADMIN" && <ShieldAlert className="w-4 h-4 text-purple-600" />}
-            {role === "STAFF" && <Briefcase className="w-4 h-4 text-blue-600" />}
-            {role === "CUSTOMER" && <UserCheck className="w-4 h-4 text-emerald-600" />}
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-              {role} View
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-            {role === "ADMIN" && "Full administrative control of systems, staff & rules."}
-            {role === "STAFF" && "Operational view for subscriptions, billing & payments."}
-            {role === "CUSTOMER" && "Personal account subscriptions & billing records."}
-          </p>
-        </div>
-
-        {/* Navigation list */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-          {navSections.map((section, idx) => (
-            <div key={idx} className="space-y-1.5">
-              <h3 className="px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                {section.title}
-              </h3>
-              <div className="space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 pb-6 pt-2">
+          {sections.map((section) => (
+            <div key={section.title} className="mt-5 first:mt-2">
+              <h3 className="px-3 pb-1.5 text-[12px] font-medium text-white/40">{section.title}</h3>
+              <ul className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href || (item.href.includes("#") && pathname === "/portal");
-
+                  const isActive = item.href.includes("#")
+                    ? false
+                    : activeHref === item.href;
                   return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => {
-                        if (window.innerWidth < 1024) onClose();
-                      }}
-                      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition ${
-                        isActive
-                          ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                          : "text-zinc-700 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800/70"
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 transition ${
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => {
+                          if (window.innerWidth < 1024) onClose();
+                        }}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors ${
                           isActive
-                            ? "text-white"
-                            : "text-zinc-400 group-hover:text-zinc-700 dark:text-zinc-500 dark:group-hover:text-zinc-300"
+                            ? "bg-white/[0.09] font-semibold text-white"
+                            : "text-white/70 hover:bg-white/[0.05] hover:text-white"
                         }`}
-                      />
-                      <span>{item.name}</span>
-                    </Link>
+                      >
+                        {isActive && (
+                          <span className="absolute -left-3 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-marigold" />
+                        )}
+                        <Icon className={`h-[17px] w-[17px] shrink-0 ${isActive ? "text-marigold" : "text-white/50"}`} />
+                        {item.name}
+                      </Link>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           ))}
-        </div>
+        </nav>
 
-        {/* Bottom footer / status */}
-        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              System Online
-            </span>
-            <span className="text-[10px] text-zinc-400">v1.0</span>
+        {user && (
+          <div className="border-t border-white/10 px-5 py-4">
+            <p className="truncate text-[13px] font-medium text-white">{user.name}</p>
+            <p className="text-[12px] text-white/50">{ROLE_LABEL[role]}</p>
           </div>
-        </div>
+        )}
       </aside>
     </>
   );

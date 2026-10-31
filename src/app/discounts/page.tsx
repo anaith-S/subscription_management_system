@@ -242,19 +242,10 @@ export default function DiscountsAndTaxesPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400">
-                <Percent className="w-6 h-6" />
-              </span>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Discounts & Taxes Rules
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Configure promotional discounts (fixed/percentage, product/subscription scope, usage limits) and tax rates.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Discounts and taxes</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Discounts apply to the next invoice on their own and stop when they expire or run out. Taxes are added from the rules here.</p>
           </div>
 
           {isAdmin && (
@@ -262,7 +253,7 @@ export default function DiscountsAndTaxesPage() {
               {activeTab === "discounts" && (
                 <button
                   onClick={() => setIsDiscModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm shadow-indigo-500/20 transition cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm shadow-sm transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   New Discount
@@ -271,7 +262,7 @@ export default function DiscountsAndTaxesPage() {
               {activeTab === "taxes" && (
                 <button
                   onClick={() => setIsTaxModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm shadow-indigo-500/20 transition cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm shadow-sm transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   New Tax Rule
@@ -465,7 +456,7 @@ export default function DiscountsAndTaxesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Target Product
                 </label>
                 <select
@@ -482,7 +473,7 @@ export default function DiscountsAndTaxesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Quantity
                 </label>
                 <input
@@ -495,7 +486,7 @@ export default function DiscountsAndTaxesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Promo / Discount Code (Optional)
                 </label>
                 <input
@@ -510,7 +501,7 @@ export default function DiscountsAndTaxesPage() {
 
             <button
               onClick={handleTestDiscounts}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition cursor-pointer flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm transition cursor-pointer flex items-center gap-2"
             >
               Evaluate Applicable Discounts
               <ArrowRight className="w-4 h-4" />
@@ -560,7 +551,7 @@ export default function DiscountsAndTaxesPage() {
               <form onSubmit={handleCreateDiscount} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Rule Name *
                     </label>
                     <input
@@ -573,7 +564,7 @@ export default function DiscountsAndTaxesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Discount Code
                     </label>
                     <input
@@ -588,7 +579,7 @@ export default function DiscountsAndTaxesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Type *
                     </label>
                     <select
@@ -601,7 +592,7 @@ export default function DiscountsAndTaxesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Value *
                     </label>
                     <input
@@ -617,7 +608,7 @@ export default function DiscountsAndTaxesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Scope *
                     </label>
                     <select
@@ -631,7 +622,7 @@ export default function DiscountsAndTaxesPage() {
                   </div>
                   {discScope === "product" && (
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                      <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                         Select Product *
                       </label>
                       <select
@@ -653,7 +644,7 @@ export default function DiscountsAndTaxesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Min Purchase Amount ($)
                     </label>
                     <input
@@ -666,7 +657,7 @@ export default function DiscountsAndTaxesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Min Quantity (Seats/Items)
                     </label>
                     <input
@@ -681,7 +672,7 @@ export default function DiscountsAndTaxesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Start Date
                     </label>
                     <input
@@ -692,7 +683,7 @@ export default function DiscountsAndTaxesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       End Date
                     </label>
                     <input
@@ -705,7 +696,7 @@ export default function DiscountsAndTaxesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Usage Limit (Max Redeems)
                   </label>
                   <input
@@ -726,7 +717,7 @@ export default function DiscountsAndTaxesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm"
+                    className="px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-xl shadow-sm"
                   >
                     Save Discount
                   </button>
@@ -746,7 +737,7 @@ export default function DiscountsAndTaxesPage() {
 
               <form onSubmit={handleCreateTax} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Tax Name *
                   </label>
                   <input
@@ -760,7 +751,7 @@ export default function DiscountsAndTaxesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Rate Percentage (%) *
                   </label>
                   <input
@@ -793,7 +784,7 @@ export default function DiscountsAndTaxesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm"
+                    className="px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-xl shadow-sm"
                   >
                     Save Tax
                   </button>

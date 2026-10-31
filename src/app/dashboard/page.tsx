@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import RevenueLoop, { REVENUE_COLORS } from "@/components/brand/RevenueLoop";
 
 interface DashboardSummary {
   active_subscriptions_count: number;
@@ -175,293 +176,192 @@ export default function DashboardPage() {
         body: JSON.stringify({ invoiceId }),
       });
       if (res.ok) {
-        alert("Overdue payment reminder dispatched successfully!");
+        alert("Reminder sent.");
       }
     } catch {
-      alert("Failed to send reminder.");
+      alert("The reminder could not be sent. Try again.");
     }
   };
 
   return (
     <AppShell>
       <div className="space-y-6">
-        {/* Header with Performance Speed Badge */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Finance Lead Executive Overview
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-400">
-                <Zap className="w-3 h-3 text-emerald-600 animate-pulse" />
-                {latencyMs !== null ? `${latencyMs}ms latency` : "< 2.0s SLA"}
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mt-1">
-              Brightloop Finance & Operations Dashboard
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Real-time recurring revenue, payment reconciliations, and debt chasing with sub-2s query speeds.
+            <p className="text-[14px] text-zinc-500" suppressHydrationWarning>
+              {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
             </p>
+            <h1 className="mt-1 text-[32px] font-semibold leading-tight text-zinc-900 dark:text-white sm:text-[38px]">
+              Revenue at a glance
+            </h1>
           </div>
-
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => fetchDashboardData()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 transition"
-              title="Refresh Analytics"
+              className="flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              title={latencyMs !== null ? `Last refresh took ${latencyMs} ms` : undefined}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-              Sync Data
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
             </button>
             <Link
               href="/payments"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-sm transition"
+              className="flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-indigo-800"
             >
-              <CreditCard className="w-3.5 h-3.5" />
-              Record Payment
+              <CreditCard className="h-4 w-4" />
+              Record payment
             </Link>
           </div>
         </div>
 
-        {/* Dynamic Filter Controls Bar */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5" /> Filter Analytics
-            </span>
-            {(datePreset !== "ALL" || statusFilter !== "ACTIVE" || customerId !== "ALL") && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-2 text-[13px] dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-wrap items-center rounded-xl bg-zinc-100 p-1 dark:bg-zinc-950">
+            {[
+              { label: "All time", value: "ALL" },
+              { label: "Today", value: "TODAY" },
+              { label: "7 days", value: "7D" },
+              { label: "30 days", value: "30D" },
+              { label: "This month", value: "THIS_MONTH" },
+              { label: "90 days", value: "90D" },
+            ].map((p) => (
               <button
-                onClick={() => {
-                  setDatePreset("ALL");
-                  setStartDate("");
-                  setEndDate("");
-                  setStatusFilter("ACTIVE");
-                  setCustomerId("ALL");
-                }}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                key={p.value}
+                onClick={() => handleDatePresetChange(p.value)}
+                aria-pressed={datePreset === p.value}
+                className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                  datePreset === p.value
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
+                }`}
               >
-                Reset All Filters
+                {p.label}
               </button>
-            )}
+            ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Date Preset Buttons */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-950 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs">
-              {[
-                { label: "All Time", value: "ALL" },
-                { label: "Today", value: "TODAY" },
-                { label: "Last 7d", value: "7D" },
-                { label: "Last 30d", value: "30D" },
-                { label: "This Month", value: "THIS_MONTH" },
-                { label: "Last 90d", value: "90D" },
-              ].map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => handleDatePresetChange(p.value)}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition ${
-                    datePreset === p.value
-                      ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Date Pickers */}
-            <div className="flex items-center gap-1 text-xs">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  setDatePreset("CUSTOM");
-                }}
-                className="px-2 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950"
-                title="Start Date"
-              />
-              <span className="text-zinc-400">-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setDatePreset("CUSTOM");
-                }}
-                className="px-2 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950"
-                title="End Date"
-              />
-            </div>
-
-            {/* Customer Filter */}
-            <select
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none"
-            >
-              <option value="ALL">All Customers</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Subscription Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none"
-            >
-              <option value="ALL">All Subscriptions</option>
-              <option value="ACTIVE">Status: ACTIVE</option>
-              <option value="QUOTATION">Status: QUOTATION</option>
-              <option value="CONFIRMED">Status: CONFIRMED</option>
-              <option value="PAUSED">Status: PAUSED</option>
-              <option value="CLOSED">Status: CLOSED</option>
-            </select>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={startDate}
+              aria-label="From date"
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setDatePreset("CUSTOM");
+              }}
+              className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <span className="text-zinc-400">to</span>
+            <input
+              type="date"
+              value={endDate}
+              aria-label="To date"
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setDatePreset("CUSTOM");
+              }}
+              className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-950"
+            />
           </div>
+
+          <select
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+            aria-label="Customer"
+            className="max-w-[200px] rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <option value="ALL">All customers</option>
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Subscription status"
+            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <option value="ALL">All subscriptions</option>
+            <option value="ACTIVE">Active</option>
+            <option value="QUOTATION">Quotation</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="PAUSED">Paused</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+
+          {(datePreset !== "ALL" || statusFilter !== "ACTIVE" || customerId !== "ALL") && (
+            <button
+              onClick={() => {
+                setDatePreset("ALL");
+                setStartDate("");
+                setEndDate("");
+                setStatusFilter("ACTIVE");
+                setCustomerId("ALL");
+              }}
+              className="ml-auto px-2 font-medium text-indigo-700 hover:underline dark:text-indigo-300"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
-        {/* 5 KPI Metric Cards (Member 4 Requirements) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* 1. Active Subscriptions */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
-            <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider">Active Subs</span>
-              <Repeat className="w-4 h-4 text-indigo-600" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-              {loading ? "..." : summary?.active_subscriptions_count ?? 0}
-            </div>
-            <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-              Recurring Contracts
-            </span>
-          </div>
-
-          {/* 2. Monthly MRR */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider">Monthly MRR</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-              ${loading ? "..." : (summary?.mrr ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-            <span className="text-[11px] text-emerald-600 font-medium">Monthly run-rate</span>
-          </div>
-
-          {/* 3. Revenue Collected */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider">Revenue Collected</span>
-              <DollarSign className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              ${loading ? "..." : (summary?.revenue_collected ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-            <span className="text-[11px] text-zinc-500">
-              {summary?.total_payments_count ?? 0} payments settled
-            </span>
-          </div>
-
-          {/* 4. Total Outstanding */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider">Total Outstanding</span>
-              <Receipt className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              ${loading ? "..." : (summary?.total_outstanding ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-            <span className="text-[11px] text-zinc-500">
-              {summary?.unpaid_invoices_count ?? 0} open invoices
-            </span>
-          </div>
-
-          {/* 5. Overdue Invoices & Amount */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider">Overdue Debt</span>
-              <AlertTriangle className="w-4 h-4 text-red-500" />
-            </div>
-            <div className="text-2xl font-bold text-red-600">
-              ${loading ? "..." : (summary?.overdue_amount ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-            <span className="text-[11px] text-red-600 dark:text-red-400 font-medium">
-              {summary?.overdue_count ?? 0} invoices past due
-            </span>
-          </div>
-        </div>
-
-        {/* Revenue Performance Visual Chart */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Revenue Ingestion vs. Outstanding Debt Distribution
-              </h3>
-              <p className="text-xs text-zinc-500">
-                Visual ratio of collected settlements against pending receivables.
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                <span className="w-3 h-3 rounded bg-emerald-500"></span> Collected (${summary?.revenue_collected.toFixed(2)})
-              </span>
-              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                <span className="w-3 h-3 rounded bg-blue-500"></span> Outstanding (${summary?.total_outstanding.toFixed(2)})
-              </span>
-              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                <span className="w-3 h-3 rounded bg-red-500"></span> Overdue (${summary?.overdue_amount.toFixed(2)})
-              </span>
-            </div>
-          </div>
-
-          {/* Graphical Progress Bar Visualization */}
-          {(() => {
-            const collected = summary?.revenue_collected || 0;
-            const outstanding = summary?.total_outstanding || 0;
-            const overdue = summary?.overdue_amount || 0;
-            const total = Math.max(1, collected + outstanding + overdue);
-
-            const collectedPct = Math.round((collected / total) * 100);
-            const outstandingPct = Math.round((outstanding / total) * 100);
-            const overduePct = Math.min(100 - collectedPct - outstandingPct, Math.round((overdue / total) * 100));
-
-            return (
-              <div className="space-y-2 pt-2">
-                <div className="h-4 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex shadow-inner">
-                  <div
-                    style={{ width: `${collectedPct}%` }}
-                    className="bg-emerald-500 hover:bg-emerald-400 transition-all duration-500"
-                    title={`Collected: ${collectedPct}%`}
-                  ></div>
-                  <div
-                    style={{ width: `${outstandingPct}%` }}
-                    className="bg-blue-500 hover:bg-blue-400 transition-all duration-500"
-                    title={`Outstanding: ${outstandingPct}%`}
-                  ></div>
-                  <div
-                    style={{ width: `${overduePct}%` }}
-                    className="bg-red-500 hover:bg-red-400 transition-all duration-500"
-                    title={`Overdue: ${overduePct}%`}
-                  ></div>
-                </div>
-
-                <div className="flex justify-between text-[11px] text-zinc-500 pt-1">
-                  <span>Settlement Rate: <strong>{collectedPct}%</strong></span>
-                  <span>Pending Collection: <strong>{outstandingPct}%</strong></span>
-                  <span className="text-red-500">Delinquent Risk: <strong>{overduePct}%</strong></span>
-                </div>
+        {(() => {
+          const money = (n: number) =>
+            n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+          const collected = summary?.revenue_collected ?? 0;
+          const outstanding = summary?.total_outstanding ?? 0;
+          const overdue = Math.min(summary?.overdue_amount ?? 0, outstanding);
+          const due = Math.max(0, outstanding - overdue);
+          const rows = [
+            { label: "Collected", value: collected, note: `${summary?.total_payments_count ?? 0} payments`, color: REVENUE_COLORS.collected },
+            { label: "Due, not yet late", value: due, note: `${summary?.unpaid_invoices_count ?? 0} open invoices`, color: REVENUE_COLORS.due },
+            { label: "Overdue", value: overdue, note: `${summary?.overdue_count ?? 0} invoices past due`, color: REVENUE_COLORS.overdue },
+          ];
+          return (
+            <section
+              aria-busy={loading}
+              className={`grid gap-8 rounded-2xl border border-zinc-200 bg-white p-6 transition-opacity dark:border-zinc-800 dark:bg-zinc-900 sm:p-8 lg:grid-cols-[300px_1fr] lg:gap-12 ${
+                loading && !summary ? "opacity-50" : ""
+              }`}
+            >
+              <div className="flex justify-center text-zinc-900 dark:text-white lg:justify-start">
+                <RevenueLoop collected={collected} due={due} overdue={overdue} />
               </div>
-            );
-          })()}
-        </div>
+
+              <div className="flex flex-col justify-center">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[14px] text-zinc-500">Monthly recurring revenue</p>
+                    <p className="font-display mt-1 text-[44px] font-semibold leading-none tracking-tight text-zinc-900 dark:text-white tabular">
+                      {money(summary?.mrr ?? 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[14px] text-zinc-500">Active subscriptions</p>
+                    <p className="font-display mt-1 text-[44px] font-semibold leading-none tracking-tight text-zinc-900 dark:text-white tabular">
+                      {(summary?.active_subscriptions_count ?? 0).toLocaleString("en-US")}
+                    </p>
+                  </div>
+                </div>
+
+                <dl className="mt-8 divide-y divide-zinc-100 border-t border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
+                  {rows.map((row) => (
+                    <div key={row.label} className="flex items-center gap-3 py-3.5">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: row.color }} />
+                      <dt className="text-[15px] font-medium text-zinc-800 dark:text-zinc-200">{row.label}</dt>
+                      <span className="hidden text-[13px] text-zinc-500 sm:inline">{row.note}</span>
+                      <dd className="ml-auto text-[17px] font-semibold text-zinc-900 dark:text-white tabular">
+                        {money(row.value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Dual Grid: Overdue Invoices Priority & Recent Payments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -472,14 +372,14 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                    Priority Overdue Chasing
+                    Overdue, oldest first
                   </h3>
                 </div>
                 <Link
                   href="/invoices/overdue"
                   className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                 >
-                  View All ({summary?.overdue_count ?? 0}) <ChevronRight className="w-3.5 h-3.5" />
+                  View all {summary?.overdue_count ?? 0} <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
@@ -505,7 +405,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="text-zinc-500 text-[11px] mt-0.5">
-                          {inv.customer.name} • Due {new Date(inv.dueDate).toLocaleDateString()}
+                          {inv.customer.name}, due {new Date(inv.dueDate).toLocaleDateString()}
                         </div>
                       </div>
 
@@ -534,9 +434,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500 flex justify-between items-center">
-              <span>Automatic reminders scheduled for all 15d+ debt.</span>
+              <span>Send a reminder from the envelope button.</span>
               <Link href="/invoices/overdue" className="font-semibold text-indigo-600 hover:underline">
-                Overdue Page &rarr;
+                All overdue invoices
               </Link>
             </div>
           </div>
@@ -548,14 +448,14 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-emerald-600" />
                   <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                    Recent Incoming Payments
+                    Latest payments
                   </h3>
                 </div>
                 <Link
                   href="/payments"
                   className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                 >
-                  View All ({summary?.total_payments_count ?? 0}) <ChevronRight className="w-3.5 h-3.5" />
+                  View all {summary?.total_payments_count ?? 0} <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
@@ -581,7 +481,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="text-zinc-500 text-[11px] mt-0.5">
-                          {p.invoice?.customer?.name || "Customer"} • {new Date(p.paymentDate).toLocaleDateString()}
+                          {p.invoice?.customer?.name || "Customer"}, {new Date(p.paymentDate).toLocaleDateString()}
                         </div>
                       </div>
 
@@ -600,9 +500,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500 flex justify-between items-center">
-              <span>Instant sync with Stripe & banking webhooks.</span>
+              <span>Latest payments recorded against invoices.</span>
               <Link href="/payments" className="font-semibold text-indigo-600 hover:underline">
-                Payment History &rarr;
+                All payments
               </Link>
             </div>
           </div>

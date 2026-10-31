@@ -224,22 +224,10 @@ export default function OverdueInvoicesPage() {
         )}
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Collections & Recovery
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-400">
-                Priority Action
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mt-1">
-              Overdue Invoices Tracking
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Monitor unpaid invoices past their due dates, send chasing reminders, and collect outstanding balances.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Overdue invoices</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Invoices past their due date with money still owed, oldest first. Send reminders before they become lost revenue.</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -265,7 +253,7 @@ export default function OverdueInvoicesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Overdue Debt</span>
+              <span className="text-xs font-medium">Total Overdue Debt</span>
               <DollarSign className="w-4 h-4 text-red-600" />
             </div>
             <div className="text-2xl font-bold text-red-600">
@@ -276,7 +264,7 @@ export default function OverdueInvoicesPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Overdue Count</span>
+              <span className="text-xs font-medium">Overdue Count</span>
               <AlertTriangle className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">{total}</div>
@@ -285,7 +273,7 @@ export default function OverdueInvoicesPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Critical Debt (&gt;30d)</span>
+              <span className="text-xs font-medium">Critical Debt (&gt;30d)</span>
               <Clock className="w-4 h-4 text-rose-600" />
             </div>
             <div className="text-2xl font-bold text-rose-600">{criticalCount} Accounts</div>
@@ -294,7 +282,7 @@ export default function OverdueInvoicesPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Max Days Overdue</span>
+              <span className="text-xs font-medium">Max Days Overdue</span>
               <Calendar className="w-4 h-4 text-indigo-600" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -449,7 +437,7 @@ export default function OverdueInvoicesPage() {
 
                             <button
                               onClick={() => openPaymentModal(inv)}
-                              className="px-2.5 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition flex items-center gap-1"
+                              className="px-2.5 py-1 text-xs rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-medium transition flex items-center gap-1"
                               title="Record payment settlement"
                             >
                               <CreditCard className="w-3 h-3" />
@@ -506,7 +494,7 @@ export default function OverdueInvoicesPage() {
               </button>
 
               <div className="mb-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                   Immediate Collection
                 </span>
                 <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
@@ -591,7 +579,7 @@ export default function OverdueInvoicesPage() {
                   <button
                     type="submit"
                     disabled={submittingPayment}
-                    className="px-5 py-2 text-xs rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition disabled:opacity-50 flex items-center gap-1.5"
+                    className="px-5 py-2 text-xs rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium transition disabled:opacity-50 flex items-center gap-1.5"
                   >
                     {submittingPayment ? (
                       <>

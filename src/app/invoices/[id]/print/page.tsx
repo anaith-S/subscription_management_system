@@ -45,7 +45,7 @@ export default function InvoicePrintPage() {
         </Link>
         <button
           onClick={() => window.print()}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg flex items-center gap-2 shadow-sm transition cursor-pointer"
+          className="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-lg flex items-center gap-2 shadow-sm transition cursor-pointer"
         >
           <Printer className="w-4 h-4" /> Print / Save as PDF
         </button>
@@ -65,7 +65,7 @@ export default function InvoicePrintPage() {
           </div>
 
           <div className="text-right">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Invoice</span>
+            <span className="text-xs font-bold text-zinc-400">Invoice</span>
             <div className="text-xl font-black text-zinc-950">{invoice.invoiceNumber}</div>
             <div className="text-xs text-zinc-600 mt-1">
               Status: <span className="font-bold uppercase">{invoice.status}</span>
@@ -76,13 +76,13 @@ export default function InvoicePrintPage() {
         {/* Invoice Metadata */}
         <div className="grid grid-cols-2 gap-8 my-8 text-xs">
           <div>
-            <div className="font-bold uppercase tracking-wider text-zinc-400 mb-1">Billed To</div>
+            <div className="font-bold text-zinc-400 mb-1">Billed To</div>
             <div className="font-bold text-sm text-zinc-900">{invoice.customer.name}</div>
             <div className="text-zinc-600">{invoice.customer.email}</div>
           </div>
 
           <div className="text-right">
-            <div className="font-bold uppercase tracking-wider text-zinc-400 mb-1">Dates</div>
+            <div className="font-bold text-zinc-400 mb-1">Dates</div>
             <div>
               <span className="text-zinc-500">Invoice Date: </span>
               <span className="font-semibold">{new Date(invoice.invoiceDate).toLocaleDateString()}</span>

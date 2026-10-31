@@ -233,22 +233,10 @@ export default function PaymentsPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Finance & Receivables
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400">
-                Member 4 Active
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mt-1">
-              Payments & Settlements
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Record incoming payments, track bank & card settlements, and reconcile outstanding invoice balances.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Payments</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Record what came in, by which method and against which invoice, and see what is still outstanding.</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -261,7 +249,7 @@ export default function PaymentsPage() {
             </button>
             <button
               onClick={openRecordModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs sm:text-sm shadow-sm transition"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs sm:text-sm shadow-sm transition"
             >
               <Plus className="w-4 h-4" />
               Record Payment
@@ -273,7 +261,7 @@ export default function PaymentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Collected</span>
+              <span className="text-xs font-medium">Total Collected</span>
               <DollarSign className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -284,7 +272,7 @@ export default function PaymentsPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Payments Count</span>
+              <span className="text-xs font-medium">Payments Count</span>
               <Receipt className="w-4 h-4 text-indigo-600" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">{total}</div>
@@ -293,7 +281,7 @@ export default function PaymentsPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Average Payment</span>
+              <span className="text-xs font-medium">Average Payment</span>
               <ArrowUpRight className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -304,7 +292,7 @@ export default function PaymentsPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Accepted Rails</span>
+              <span className="text-xs font-medium">Accepted Rails</span>
               <CreditCard className="w-4 h-4 text-purple-600" />
             </div>
             <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300 mt-2 space-y-1">
@@ -554,7 +542,7 @@ export default function PaymentsPage() {
               </button>
 
               <div className="mb-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                   Transaction Entry
                 </span>
                 <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
@@ -715,7 +703,7 @@ export default function PaymentsPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex items-center gap-2 px-5 py-2 text-xs rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition disabled:opacity-50"
+                    className="flex items-center gap-2 px-5 py-2 text-xs rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium shadow-sm transition disabled:opacity-50"
                   >
                     {submitting ? (
                       <>

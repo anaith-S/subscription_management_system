@@ -106,17 +106,10 @@ export default function AdminStaffPage() {
     <AppShell>
       <div className="space-y-8">
         {/* Header */}
-        <div className="p-6 rounded-2xl bg-zinc-900 text-white shadow-xl border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/30 text-purple-200 border border-purple-400/30">
-                Admin Privilege
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight mt-1">Staff Member Provisioning</h1>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Only the Admin can create new internal staff users to manage day-to-day operations.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Staff</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Members of the operations team. Only administrators can add staff.</p>
           </div>
         </div>
 
@@ -146,11 +139,11 @@ export default function AdminStaffPage() {
 
             <form onSubmit={handleCreateStaff} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                   <input
                     type="text"
                     required
@@ -163,11 +156,11 @@ export default function AdminStaffPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                   <input
                     type="email"
                     required
@@ -180,11 +173,11 @@ export default function AdminStaffPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                   Initial Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                   <input
                     type="password"
                     required
@@ -222,7 +215,7 @@ export default function AdminStaffPage() {
               <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Creating Staff User..." : "Create Staff Account"}
               </button>
@@ -241,7 +234,7 @@ export default function AdminStaffPage() {
 
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
+                <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold">
                   <tr>
                     <th className="px-5 py-3.5">Name</th>
                     <th className="px-5 py-3.5">Email</th>

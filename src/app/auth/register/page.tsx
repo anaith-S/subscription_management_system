@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import AuthLayout from "@/components/brand/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, Mail, User, ArrowRight, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
@@ -45,23 +46,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-zinc-50 dark:bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-xl shadow-lg shadow-indigo-500/25">
-            BL
-          </div>
-          <h2 className="mt-4 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Create Customer Account
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Join Brightloop to purchase software & manage plans
-          </p>
+    <AuthLayout>
+      <div className="w-full space-y-8">
+        <div>
+          <h1 className="text-[34px] font-semibold leading-tight text-zinc-900 dark:text-white">Create your account</h1>
+          <p className="mt-2 text-[15px] text-zinc-600 dark:text-zinc-400">For Brightloop customers. Your subscriptions and invoices will appear here.</p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 flex items-start gap-3 text-red-700 dark:text-red-400 text-sm">
+          <div className="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 p-3.5 flex items-start gap-3 text-red-700 dark:text-red-400 text-sm">
             <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
             <span>{error}</span>
           </div>
@@ -69,76 +62,76 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Full Name or Company
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              Name or company
             </label>
             <div className="relative">
-              <User className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Acme Corp / Jane Doe"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Email Address
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="customer@example.com"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Confirm Password
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              Confirm password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
 
           {/* Password Policy Live Requirements Checklist */}
           <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700/60 space-y-1.5 text-xs">
-            <p className="font-semibold text-zinc-700 dark:text-zinc-300">Password Requirements:</p>
+            <p className="font-semibold text-zinc-700 dark:text-zinc-300">Your password needs</p>
             <div className="grid grid-cols-2 gap-1.5 text-zinc-600 dark:text-zinc-400">
               <div className="flex items-center gap-1.5">
                 {hasMinLength ? (
@@ -190,9 +183,9 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={!isFormValid || isSubmitting}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Creating Account..." : "Create Account"}
+            {isSubmitting ? "Creating account…" : "Create account"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
@@ -203,10 +196,10 @@ export default function RegisterPage() {
             href="/auth/login"
             className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
           >
-            Log in instead
+            Sign in instead
           </Link>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

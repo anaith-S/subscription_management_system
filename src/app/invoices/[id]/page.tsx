@@ -236,7 +236,7 @@ export default function InvoiceDetailPage() {
             </div>
 
             <div className="text-left sm:text-right">
-              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Invoice Details</div>
+              <div className="text-xs font-semibold text-zinc-400">Invoice Details</div>
               <div className="text-lg font-bold text-zinc-900 dark:text-white mt-1">
                 {invoice.invoiceNumber}
               </div>
@@ -251,13 +251,13 @@ export default function InvoiceDetailPage() {
           {/* Billed To & Subscription Reference */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-zinc-200 dark:border-zinc-800">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Billed To</div>
+              <div className="text-xs font-semibold text-zinc-400 mb-1">Billed To</div>
               <div className="font-bold text-sm text-zinc-900 dark:text-white">{invoice.customer.name}</div>
               <div className="text-xs text-zinc-500">{invoice.customer.email}</div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+              <div className="text-xs font-semibold text-zinc-400 mb-1">
                 Subscription Reference
               </div>
               {invoice.subscription ? (
@@ -275,7 +275,7 @@ export default function InvoiceDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase tracking-wider text-[11px]">
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 text-[11px]">
                   <th className="py-2.5 font-semibold">Description</th>
                   <th className="py-2.5 font-semibold text-center">Qty</th>
                   <th className="py-2.5 font-semibold text-right">Unit Price</th>
@@ -339,7 +339,7 @@ export default function InvoiceDetailPage() {
           {/* Payment Records Section */}
           {invoice.payments && invoice.payments.length > 0 && (
             <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
+              <h3 className="text-xs font-bold text-zinc-400 mb-2">
                 Settlement & Payments
               </h3>
               <div className="space-y-2">
@@ -377,7 +377,7 @@ export default function InvoiceDetailPage() {
 
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Payment Method
                   </label>
                   <select
@@ -393,7 +393,7 @@ export default function InvoiceDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Amount ($)
                   </label>
                   <input
@@ -406,7 +406,7 @@ export default function InvoiceDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Note / Reference
                   </label>
                   <input

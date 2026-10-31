@@ -188,25 +188,16 @@ export default function QuotationTemplatesPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                <FileText className="w-5 h-5" />
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Quotation Templates
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Pre-configured product bundles and plans that sales reps can turn into subscriptions in one click.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Quotation templates</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Ready-made offers with a plan and product lines. Turn one into a subscription for a customer in a few clicks.</p>
           </div>
 
           {isStaffOrAdmin && (
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm transition"
             >
               <Plus className="w-4 h-4" />
               New Template
@@ -266,7 +257,7 @@ export default function QuotationTemplatesPage() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-1.5">
-                      <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      <div className="text-[11px] font-semibold text-zinc-400">
                         Included Product Lines
                       </div>
                       {tpl.lines.map((line) => (
@@ -293,7 +284,7 @@ export default function QuotationTemplatesPage() {
                     {isStaffOrAdmin && (
                       <button
                         onClick={() => setSelectedTemplate(tpl)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm transition"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         Turn into Quote
@@ -319,7 +310,7 @@ export default function QuotationTemplatesPage() {
 
               <form onSubmit={handleCreateTemplate} className="mt-4 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Template Name *
                   </label>
                   <input
@@ -334,7 +325,7 @@ export default function QuotationTemplatesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Billing Plan
                     </label>
                     <select
@@ -351,7 +342,7 @@ export default function QuotationTemplatesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Validity (Days)
                     </label>
                     <input
@@ -450,7 +441,7 @@ export default function QuotationTemplatesPage() {
 
               <form onSubmit={handleInstantiateSubscription} className="mt-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Select Customer *
                   </label>
                   <select
@@ -468,7 +459,7 @@ export default function QuotationTemplatesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Payment Terms
                   </label>
                   <select
@@ -483,7 +474,7 @@ export default function QuotationTemplatesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Discount Code (Optional)
                   </label>
                   <input
@@ -506,7 +497,7 @@ export default function QuotationTemplatesPage() {
                   <button
                     type="submit"
                     disabled={instantiating}
-                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white"
+                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-700 hover:bg-indigo-800 text-white"
                   >
                     {instantiating ? "Creating..." : "Create Subscription"}
                   </button>
