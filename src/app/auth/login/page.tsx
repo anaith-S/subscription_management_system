@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, Mail, AlertCircle, KeyRound } from "lucide-react";
@@ -14,6 +14,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    setSessionExpired(new URLSearchParams(window.location.search).has("expired"));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +44,15 @@ export default function LoginPage() {
       <p className="mt-2 text-[15px] text-zinc-600 dark:text-zinc-400">
         Use the email and password for your Brightloop account.
       </p>
+
+      {sessionExpired && !error && (
+        <div
+          role="status"
+          className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-[14px] text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          Your session ended. Sign in again to continue.
+        </div>
+      )}
 
       {error && (
         <div

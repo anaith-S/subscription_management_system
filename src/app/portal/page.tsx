@@ -30,15 +30,18 @@ export default function CustomerPortalPage() {
       setError(null);
       const res = await authFetch("/api/portal/data");
 
+      // Signed out: authFetch is already taking the user to the sign-in page.
+      if (res.status === 401) return;
+
       if (!res.ok) {
-        throw new Error("Failed to load customer subscription data");
+        setError("Your subscriptions couldn’t be loaded. Refresh to try again.");
+        return;
       }
 
       const result = await res.json();
       setData(result);
     } catch (err: any) {
-      console.error("Fetch error:", err);
-      setError(err.message || "Could not retrieve records");
+      setError(err instanceof Error ? err.message : "Your subscriptions couldn’t be loaded.");
     } finally {
       setLoading(false);
     }
