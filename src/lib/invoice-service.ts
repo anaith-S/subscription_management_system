@@ -118,31 +118,11 @@ export async function transitionInvoice(
           },
         });
 
-<<<<<<< HEAD
-        // Compute total payments using SQL aggregate
-        const paymentSumAgg = await tx.payment.aggregate({
-          where: { invoiceId },
-          _sum: { amount: true },
-        });
-
-        const totalPaid = Number((paymentSumAgg._sum.amount || 0).toFixed(2));
-        const invoiceTotal = Number(invoice.totalAmount.toFixed(2));
-        const newStatus = totalPaid >= invoiceTotal ? InvoiceStatus.PAID : InvoiceStatus.CONFIRMED;
-
-        // Update invoice status based on payment total
-        const updatedInvoice = await tx.invoice.update({
-          where: { id: invoiceId },
-          data: {
-            status: newStatus,
-          },
-          include: { customer: true, lines: true, payments: true },
-=======
         const fullyPaid = paidCents + amountCents >= toCents(invoice.totalAmount);
         return tx.invoice.update({
           where: { id: invoiceId },
           data: { status: fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.CONFIRMED },
           include: INVOICE_RESULT_INCLUDE,
->>>>>>> 904d2ec375d6a3500b2b79c0196455cd5a68ab46
         });
       }
     }

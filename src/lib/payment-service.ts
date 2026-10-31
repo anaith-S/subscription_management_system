@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, PaymentMethod, SubscriptionStatus } from "@prisma/client";
 import { AuthenticatedUser } from "@/lib/deps";
+import { AppError } from "@/lib/errors";
+import { fromCents, toCents } from "@/lib/money";
 
 export interface RecordPaymentInput {
   invoiceId: string;
@@ -69,74 +71,68 @@ export async function recordPayment(input: RecordPaymentInput) {
   const { invoiceId, method, amount, paymentDate, note, createdBy, user } = input;
 
   if (!invoiceId) {
-    throw new Error("invoiceId is required to record a payment");
+    throw new AppError("invoiceId is required to record a payment");
   }
 
-  const numericAmount = Number(amount);
-  if (isNaN(numericAmount) || numericAmount <= 0) {
-    throw new Error("Payment amount must be greater than zero");
+  const amountCents = toCents(Number(amount));
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    throw new AppError("Payment amount must be greater than zero");
   }
 
-  // 1. Fetch invoice to validate status and customer
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
-    include: { customer: true },
-  });
-
-  if (!invoice) {
-    throw new Error(`Invoice with ID '${invoiceId}' not found`);
-  }
-
-  // Customer role permission check: customers can only pay their own invoices
-  if (user && user.role === "CUSTOMER" && invoice.customerId !== user.id) {
-    throw new Error("Forbidden: You cannot record payments against another customer's invoice");
-  }
-
-  // Reject payments on CANCELLED invoices
-  if (invoice.status === InvoiceStatus.CANCELLED) {
-    throw new Error("Cannot record payment on a CANCELLED invoice.");
-  }
-
-  const effectiveMethod = normalizePaymentMethod(method);
   const effectiveDate = paymentDate ? new Date(paymentDate) : new Date();
-  const effectiveCreatedBy = createdBy || user?.id || null;
+  if (Number.isNaN(effectiveDate.getTime())) {
+    throw new AppError("paymentDate is not a valid date");
+  }
+  const effectiveMethod = normalizePaymentMethod(method);
 
-  // 2. Atomic Transaction: Record payment & recalculate invoice status using SQL aggregate
+  // Read, validate and write in one transaction so two payments at once can't
+  // both pass the balance check.
   return await prisma.$transaction(async (tx) => {
+    const invoice = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { payments: { select: { amount: true } } },
+    });
+    if (!invoice) {
+      throw new AppError("Invoice not found", 404);
+    }
+
+    // Customer role permission check: customers can only pay their own invoices
+    if (user && user.role === "CUSTOMER" && invoice.customerId !== user.id) {
+      throw new AppError("Forbidden: You cannot record payments against another customer's invoice", 403);
+    }
+
+    // Same rule as the invoice "pay" action: only CONFIRMED invoices take payments.
+    if (invoice.status !== InvoiceStatus.CONFIRMED) {
+      throw new AppError(
+        `Payments can only be recorded on CONFIRMED invoices. This invoice is ${invoice.status}.`,
+        409
+      );
+    }
+
+    const totalCents = toCents(invoice.totalAmount);
+    const paidCents = invoice.payments.reduce((sum, p) => sum + toCents(p.amount), 0);
+    const balanceCents = totalCents - paidCents;
+    if (amountCents > balanceCents) {
+      throw new AppError(
+        `Payment of ${fromCents(amountCents).toFixed(2)} is more than the balance due of ${fromCents(balanceCents).toFixed(2)}`
+      );
+    }
+
     const payment = await tx.payment.create({
       data: {
         invoiceId,
         method: effectiveMethod,
-        amount: numericAmount,
+        amount: fromCents(amountCents),
         paymentDate: effectiveDate,
         note: note ? note.trim() : null,
-        createdBy: effectiveCreatedBy,
+        createdBy: createdBy || user?.id || null,
       },
     });
 
-    // Compute SUM of all payments for this invoice using SQL aggregate (SUM)
-    const paymentSumAgg = await tx.payment.aggregate({
-      where: { invoiceId },
-      _sum: { amount: true },
-    });
-
-    const totalPaid = Number((paymentSumAgg._sum.amount || 0).toFixed(2));
-    const invoiceTotal = Number(invoice.totalAmount.toFixed(2));
-    const balanceDue = Math.max(0, Number((invoiceTotal - totalPaid).toFixed(2)));
-
-    let newStatus = invoice.status;
-
-    if (totalPaid >= invoiceTotal) {
-      // Sum of payments is at least the invoice total -> Set to PAID
-      newStatus = InvoiceStatus.PAID;
-    } else {
-      // Partial payments keep the invoice CONFIRMED (if it was DRAFT, advance it to CONFIRMED)
-      newStatus = InvoiceStatus.CONFIRMED;
-    }
-
+    const newPaidCents = paidCents + amountCents;
     const updatedInvoice = await tx.invoice.update({
       where: { id: invoiceId },
-      data: { status: newStatus },
+      data: { status: newPaidCents >= totalCents ? InvoiceStatus.PAID : InvoiceStatus.CONFIRMED },
       include: {
         customer: { select: { id: true, name: true, email: true } },
       },
@@ -149,8 +145,8 @@ export async function recordPayment(input: RecordPaymentInput) {
         invoiceNumber: updatedInvoice.invoiceNumber,
         status: updatedInvoice.status,
         totalAmount: updatedInvoice.totalAmount,
-        amountPaid: totalPaid,
-        balanceDue,
+        amountPaid: fromCents(newPaidCents),
+        balanceDue: fromCents(totalCents - newPaidCents),
         customer: updatedInvoice.customer,
       },
     };
@@ -536,7 +532,7 @@ export async function getReportsSummary(filters: ReportsSummaryFilters = {}) {
     unpaid_invoices_count: unpaidInvoicesCount,
     unpaidInvoicesCount,
     total_payments_count: paymentCount,
-    totalPaymentsCount,
+    totalPaymentsCount: paymentCount,
     mrr,
     filters_applied: {
       startDate: startDate || null,

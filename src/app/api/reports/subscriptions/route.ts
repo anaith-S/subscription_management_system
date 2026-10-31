@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 import { SubscriptionStatus } from "@prisma/client";
 
 /**
@@ -10,7 +11,8 @@ import { SubscriptionStatus } from "@prisma/client";
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     const { searchParams } = new URL(req.url);
 
     const statusParam = searchParams.get("status") || searchParams.get("subscriptionStatus");
@@ -66,10 +68,7 @@ export async function GET(req: NextRequest) {
       pageSize,
       totalPages: Math.ceil(total / pageSize) || 1,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch subscriptions report" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch subscriptions report");
   }
 }

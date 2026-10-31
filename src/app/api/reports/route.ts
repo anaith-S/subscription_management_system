@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 import { getReportsSummary, getOverdueInvoices, getPayments } from "@/lib/payment-service";
 
 /**
@@ -9,7 +10,8 @@ import { getReportsSummary, getOverdueInvoices, getPayments } from "@/lib/paymen
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     const { searchParams } = new URL(req.url);
 
     const startDate = searchParams.get("startDate") || searchParams.get("start_date") || undefined;
@@ -34,10 +36,7 @@ export async function GET(req: NextRequest) {
         under_2_seconds: latencyMs < 2000,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to generate report" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to generate report");
   }
 }

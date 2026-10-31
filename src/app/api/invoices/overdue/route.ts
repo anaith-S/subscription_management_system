@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 import { getOverdueInvoices } from "@/lib/payment-service";
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +14,8 @@ import { prisma } from "@/lib/prisma";
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     const { searchParams } = new URL(req.url);
 
     const todayParam = searchParams.get("today") || undefined;
@@ -30,11 +32,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch overdue invoices" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch overdue invoices");
   }
 }
 
@@ -45,7 +44,8 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) {
       return NextResponse.json(
         { error: "Forbidden: Only Admin and Staff can dispatch overdue invoice reminders." },
@@ -90,10 +90,7 @@ export async function POST(req: NextRequest) {
       count: updated.count,
       reminders: dispatched,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to send overdue reminders" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to send overdue reminders");
   }
 }

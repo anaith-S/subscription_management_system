@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 import { getInvoicePaymentViews } from "@/lib/payment-service";
 
 /**
@@ -12,7 +13,8 @@ import { getInvoicePaymentViews } from "@/lib/payment-service";
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     const { searchParams } = new URL(req.url);
 
     const type = (searchParams.get("type") as "paid" | "outstanding" | "all") || "all";
@@ -29,10 +31,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch invoice payment views" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch invoice payment views");
   }
 }
