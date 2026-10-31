@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 import { recordPayment, getPayments } from "@/lib/payment-service";
 
 /**
@@ -11,9 +12,9 @@ import { recordPayment, getPayments } from "@/lib/payment-service";
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
-    // Any authenticated user or guest/webhook recording payment:
-    // If user is logged in, their ID is captured as created_by
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
+    // Only Admin / Staff record payments; created_by is always the logged-in user.
 
     const body = await req.json();
     const {
@@ -24,13 +25,11 @@ export async function POST(req: NextRequest) {
       paymentDate,
       payment_date,
       note,
-      createdBy,
-      created_by,
     } = body;
 
     const targetInvoiceId = invoiceId || invoice_id;
     const targetPaymentDate = paymentDate || payment_date;
-    const targetCreatedBy = createdBy || created_by || user?.id || null;
+    const targetCreatedBy = user.id;
 
     if (!targetInvoiceId) {
       return NextResponse.json(
@@ -69,19 +68,8 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    const status = error.message?.includes("not found")
-      ? 404
-      : error.message?.includes("Forbidden")
-      ? 403
-      : error.message?.includes("CANCELLED")
-      ? 400
-      : 400;
-
-    return NextResponse.json(
-      { error: error.message || "Failed to record payment" },
-      { status }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to record payment");
   }
 }
 
@@ -91,7 +79,8 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
+    const { user, error: authError } = await require_role("ADMIN", "STAFF")(req);
+    if (authError || !user) return authError;
     const { searchParams } = new URL(req.url);
 
     const invoiceId = searchParams.get("invoiceId") || searchParams.get("invoice_id") || undefined;
@@ -114,10 +103,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch payments" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch payments");
   }
 }
