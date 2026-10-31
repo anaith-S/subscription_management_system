@@ -165,76 +165,85 @@ model QuotationTemplateLine {
 model Subscription {
   id                 String             @id @default(uuid())
   subscriptionNumber String             @unique // e.g. "SUB-1001"
-  customerId         String
+  customerId         String             @map("customer_id")
   customer           User               @relation(fields: [customerId], references: [id])
-  planId             String
+  planId             String             @map("plan_id")
   plan               Plan               @relation(fields: [planId], references: [id])
   status             SubscriptionStatus @default(DRAFT)
-  startDate          DateTime           @default(now())
-  expiryDate         DateTime?
-  nextBillingDate    DateTime
-  lastBilledDate     DateTime?
-  paymentTerms       String             @default("Immediate")
-  discountCode       String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  startDate          DateTime           @default(now()) @map("start_date")
+  expiryDate         DateTime?          @map("expiry_date")
+  nextBillingDate    DateTime           @map("next_billing_date")
+  lastBilledDate     DateTime?          @map("last_billed_date")
+  paymentTerms       String             @default("Immediate") @map("payment_terms")
+  discountCode       String?            @map("discount_code")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
 
   lines              SubscriptionLine[]
   invoices           Invoice[]
+
+  @@index([status, customerId])
+  @@map("subscriptions")
 }
 
 model SubscriptionLine {
   id             String          @id @default(uuid())
-  subscriptionId String
+  subscriptionId String          @map("subscription_id")
   subscription   Subscription    @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  productId      String
+  productId      String          @map("product_id")
   product        Product         @relation(fields: [productId], references: [id])
-  variantId      String?
+  variantId      String?         @map("variant_id")
   variant        ProductVariant? @relation(fields: [variantId], references: [id])
   quantity       Int             @default(1)
-  unitPrice      Float           @default(0.0)
-  taxRate        Float           @default(0.0) // percentage e.g. 10.0
+  unitPrice      Float           @default(0.0) @map("unit_price")
+  taxRate        Float           @default(0.0) @map("tax_rate") // percentage e.g. 10.0
   amount         Float           @default(0.0)
+
+  @@map("subscription_lines")
 }
 
 model Invoice {
   id             String        @id @default(uuid())
   invoiceNumber  String        @unique // e.g. "INV-1001"
-  customerId     String
+  customerId     String        @map("customer_id")
   customer       User          @relation(fields: [customerId], references: [id])
-  subscriptionId String?
+  subscriptionId String?       @map("subscription_id")
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
-  periodStart    DateTime?
-  periodEnd      DateTime?
+  periodStart    DateTime?     @map("period_start")
+  periodEnd      DateTime?     @map("period_end")
   status         InvoiceStatus @default(DRAFT)
-  invoiceDate    DateTime      @default(now())
-  dueDate        DateTime
+  invoiceDate    DateTime      @default(now()) @map("invoice_date")
+  dueDate        DateTime      @map("due_date")
   subtotal       Float         @default(0.0)
-  taxAmount      Float         @default(0.0)
-  discountAmount Float         @default(0.0)
-  totalAmount    Float         @default(0.0)
+  taxAmount      Float         @default(0.0) @map("tax_amount")
+  discountAmount Float         @default(0.0) @map("discount_amount")
+  totalAmount    Float         @default(0.0) @map("total_amount")
   notes          String?
-  sentAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  sentAt         DateTime?     @map("sent_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
   lines          InvoiceLine[]
   payments       Payment[]
 
   @@unique([subscriptionId, periodStart])
+  @@index([status, dueDate, customerId])
+  @@map("invoices")
 }
 
 model InvoiceLine {
   id          String   @id @default(uuid())
-  invoiceId   String
+  invoiceId   String   @map("invoice_id")
   invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId   String?
+  productId   String?  @map("product_id")
   product     Product? @relation(fields: [productId], references: [id])
   description String
   quantity    Int      @default(1)
-  unitPrice   Float    @default(0.0)
-  taxRate     Float    @default(0.0)
+  unitPrice   Float    @default(0.0) @map("unit_price")
+  taxRate     Float    @default(0.0) @map("tax_rate")
   amount      Float    @default(0.0)
+
+  @@map("invoice_lines")
 }
 
 model TaxRule {
@@ -269,11 +278,15 @@ model DiscountRule {
 
 model Payment {
   id          String        @id @default(uuid())
-  invoiceId   String
+  invoiceId   String        @map("invoice_id")
   invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   method      PaymentMethod @default(BANK_TRANSFER)
   amount      Float         @default(0.0)
-  paymentDate DateTime      @default(now())
+  paymentDate DateTime      @default(now()) @map("payment_date")
   note        String?
-  createdAt   DateTime      @default(now())
+  createdBy   String?       @map("created_by")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([invoiceId, paymentDate])
+  @@map("payments")
 }

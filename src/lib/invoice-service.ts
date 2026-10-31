@@ -83,11 +83,21 @@ export async function transitionInvoice(
           },
         });
 
-        // Update invoice to PAID
+        // Compute total payments using SQL aggregate
+        const paymentSumAgg = await tx.payment.aggregate({
+          where: { invoiceId },
+          _sum: { amount: true },
+        });
+
+        const totalPaid = Number((paymentSumAgg._sum.amount || 0).toFixed(2));
+        const invoiceTotal = Number(invoice.totalAmount.toFixed(2));
+        const newStatus = totalPaid >= invoiceTotal ? InvoiceStatus.PAID : InvoiceStatus.CONFIRMED;
+
+        // Update invoice status based on payment total
         const updatedInvoice = await tx.invoice.update({
           where: { id: invoiceId },
           data: {
-            status: InvoiceStatus.PAID,
+            status: newStatus,
           },
           include: { customer: true, lines: true, payments: true },
         });

@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       { source: "/api/taxes", destination: "/api/catalog/taxes" },
       { source: "/api/discounts/:path*", destination: "/api/catalog/discounts/:path*" },
       { source: "/api/discounts", destination: "/api/catalog/discounts" },
+      { source: "/reports/summary", destination: "/api/reports/summary" },
+      { source: "/reports/:path*", destination: "/api/reports/:path*" },
+      { source: "/reports", destination: "/api/reports" },
     ];
   },
 };
