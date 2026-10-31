@@ -195,6 +195,8 @@ model Invoice {
   customer       User          @relation(fields: [customerId], references: [id])
   subscriptionId String?
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  periodStart    DateTime?
+  periodEnd      DateTime?
   status         InvoiceStatus @default(DRAFT)
   invoiceDate    DateTime      @default(now())
   dueDate        DateTime
@@ -203,11 +205,14 @@ model Invoice {
   discountAmount Float         @default(0.0)
   totalAmount    Float         @default(0.0)
   notes          String?
+  sentAt         DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   lines          InvoiceLine[]
   payments       Payment[]
+
+  @@unique([subscriptionId, periodStart])
 }
 
 model InvoiceLine {

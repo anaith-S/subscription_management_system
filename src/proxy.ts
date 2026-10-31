@@ -13,7 +13,12 @@ import { SESSION_COOKIE, verifyToken } from "@/lib/session";
  */
 
 const ADMIN_AREA = /^\/admin(\/|$)/;
-const STAFF_AREA = [/^\/dashboard(\/|$)/, /^\/subscriptions(\/|$)/];
+const STAFF_AREA = [
+  /^\/dashboard(\/|$)/,
+  /^\/subscriptions(\/|$)/,
+  /^\/quotation-templates(\/|$)/,
+  /^\/invoices(\/|$)/,
+];
 const CUSTOMER_AREA = /^\/portal(\/|$)/;
 
 function homeFor(role: string | undefined) {
@@ -59,6 +64,8 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/subscriptions/:path*",
+    "/quotation-templates/:path*",
+    "/invoices/:path*",
     "/admin/:path*",
     "/portal/:path*",
   ],
