@@ -18,7 +18,6 @@ import {
   UserCheck,
   ShieldAlert,
   Briefcase,
-  HelpCircle,
   FileText,
 } from "lucide-react";
 
@@ -50,7 +49,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             { name: "Products & Variants", href: "/products", icon: Package },
             { name: "Billing Plans", href: "/plans", icon: Layers },
             { name: "Quotation Templates", href: "/quotation-templates", icon: FileText },
-            { name: "Discounts & Taxes", href: "/discounts", icon: Percent },
+            { name: "Discounts", href: "/discounts", icon: Percent },
+            { name: "Tax Rules", href: "/taxes", icon: Receipt },
           ],
         },
         {
@@ -81,6 +81,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           items: [
             { name: "Products List", href: "/products", icon: Package },
             { name: "Plans Available", href: "/plans", icon: Layers },
+            { name: "Tax Rules", href: "/taxes", icon: Receipt },
           ],
         },
       ];

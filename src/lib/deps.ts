@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { extractTokenFromRequest, verifyToken, JWTPayload } from "@/lib/auth";
+import { extractTokenFromRequest, verifyToken } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 
 export interface AuthenticatedUser {
