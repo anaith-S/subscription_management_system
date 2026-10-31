@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validatePassword, hashPassword, signToken } from "@/lib/auth";
+import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
 export async function POST(req: Request) {
   try {
@@ -76,13 +77,8 @@ export async function POST(req: Request) {
       { status: 201 }
     );
 
-    // Set cookie for browser sessions
-    response.cookies.set("auth_token", token, {
-      httpOnly: false, // accessible to client auth context
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax",
-    });
+    // Set httpOnly session cookie
+    response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
 
     return response;
   } catch (error: any) {

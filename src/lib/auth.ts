@@ -1,17 +1,11 @@
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { SESSION_COOKIE, signToken, verifyToken } from "@/lib/session";
 
-export const JWT_SECRET = process.env.JWT_SECRET || "brightloop-super-secret-jwt-key-2026-hackathon";
-
-export interface JWTPayload {
-  id: string;
-  email: string;
-  role: string;
-  name: string;
-}
+// Re-exported so existing imports from "@/lib/auth" keep working.
+export { signToken, verifyToken };
+export type { JWTPayload } from "@/lib/session";
 
 export function validatePassword(password: string): { valid: boolean; error?: string } {
   if (!password || password.length <= 8) {
@@ -27,18 +21,6 @@ export function validatePassword(password: string): { valid: boolean; error?: st
     return { valid: false, error: "Password must contain at least one special character." };
   }
   return { valid: true };
-}
-
-export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
-}
-
-export function verifyToken(token: string): JWTPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
-  } catch {
-    return null;
-  }
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -60,7 +42,7 @@ export async function extractTokenFromRequest(req?: Request | NextRequest): Prom
   // Check cookies via next/headers
   try {
     const cookieStore = await cookies();
-    const cookieToken = cookieStore.get("auth_token")?.value;
+    const cookieToken = cookieStore.get(SESSION_COOKIE)?.value;
     if (cookieToken) return cookieToken;
   } catch {
     // If running outside request context or cookies() fails

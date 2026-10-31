@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   Briefcase,
   HelpCircle,
+  FileText,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,6 +49,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           items: [
             { name: "Products & Variants", href: "/products", icon: Package },
             { name: "Billing Plans", href: "/plans", icon: Layers },
+            { name: "Quotation Templates", href: "/quotation-templates", icon: FileText },
             { name: "Discounts & Taxes", href: "/discounts", icon: Percent },
           ],
         },
@@ -68,6 +70,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Daily Operations",
           items: [
             { name: "Subscriptions & Quotes", href: "/subscriptions", icon: Repeat },
+            { name: "Quotation Templates", href: "/quotation-templates", icon: FileText },
             { name: "Invoices Management", href: "/invoices", icon: Receipt },
             { name: "Overdue Invoices", href: "/invoices/overdue", icon: AlertTriangle },
             { name: "Record Payments", href: "/payments", icon: CreditCard },

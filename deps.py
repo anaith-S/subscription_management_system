@@ -143,3 +143,81 @@ def customer_scoping_helper(user: Dict[str, Any], query_filters: Optional[Dict[s
 
 # Aliases for different naming conventions
 scope_customer_query = customer_scoping_helper
+
+
+def calculate_unit_price(base_price: float, variant_extra_price: Optional[float] = 0.0) -> float:
+    """
+    Price helper: final unit price = base price + variant extra price
+    """
+    base = float(base_price or 0.0)
+    extra = float(variant_extra_price or 0.0)
+    return round(base + extra, 2)
+
+
+calculateUnitPrice = calculate_unit_price
+
+
+def get_applicable_discounts(subscription: Dict[str, Any], lines: List[Dict[str, Any]], today: Any = None, discounts: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+    """
+    Helper get_applicable_discounts(subscription, lines, today) that returns valid discounts
+    (dates ok, usage not exhausted, minimums met). Member 3 calls this during invoicing.
+    """
+    from datetime import datetime
+    if today is None:
+        today = datetime.now()
+    elif isinstance(today, str):
+        today = datetime.fromisoformat(today)
+
+    code = str(subscription.get("discountCode") or subscription.get("discount_code") or "").strip().upper()
+    discounts_list = discounts or []
+    applicable = []
+
+    for d in discounts_list:
+        d_code = str(d.get("code") or "").strip().upper()
+        if code and d_code != code:
+            continue
+
+        start_date = d.get("startDate") or d.get("start_date")
+        if start_date:
+            s_date = datetime.fromisoformat(str(start_date)) if isinstance(start_date, str) else start_date
+            if today < s_date:
+                continue
+
+        end_date = d.get("endDate") or d.get("end_date")
+        if end_date:
+            e_date = datetime.fromisoformat(str(end_date)) if isinstance(end_date, str) else end_date
+            if today > e_date:
+                continue
+
+        usage_limit = d.get("usageLimit") or d.get("usage_limit")
+        used_count = d.get("timesUsed") if d.get("timesUsed") is not None else d.get("used_count", 0)
+        if usage_limit is not None and used_count >= usage_limit:
+            continue
+
+        target_type = str(d.get("targetType") or d.get("applies_to") or "WHOLE_SUBSCRIPTION").upper()
+        target_product_id = d.get("targetProductId") or d.get("product_id")
+
+        if target_type in ("SPECIFIC_PRODUCT", "PRODUCT") or target_product_id:
+            target_lines = [l for l in (lines or []) if str(l.get("productId") or l.get("product_id")) == str(target_product_id)]
+            if not target_lines:
+                continue
+        else:
+            target_lines = lines or []
+
+        total_qty = sum(float(l.get("quantity", 0)) for l in target_lines)
+        total_amt = sum(float(l.get("amount") if l.get("amount") is not None else float(l.get("quantity", 0)) * float(l.get("unitPrice", 0))) for l in target_lines)
+
+        min_qty = d.get("minQuantity") or d.get("min_quantity")
+        if min_qty is not None and total_qty < float(min_qty):
+            continue
+
+        min_purchase = d.get("minPurchaseAmount") or d.get("min_purchase")
+        if min_purchase is not None and total_amt < float(min_purchase):
+            continue
+
+        applicable.append(d)
+
+    return applicable
+
+
+getApplicableDiscounts = get_applicable_discounts

@@ -3,13 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { Mail, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -17,17 +16,16 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError(null);
     setStatusMessage(null);
-    setResetLink(null);
     setIsSubmitting(true);
 
     const result = await forgotPassword(email);
     setIsSubmitting(false);
 
     if (result.success) {
-      setStatusMessage(result.message || "Reset link generated.");
-      if (result.resetLink) {
-        setResetLink(result.resetLink);
-      }
+      setStatusMessage(
+        result.message ||
+          "If an account with that email exists, a password reset link has been sent."
+      );
     } else {
       setError(result.error || "Failed to submit request");
     }
@@ -63,20 +61,11 @@ export default function ForgotPasswordPage() {
               <span>{statusMessage}</span>
             </div>
 
-            {/* Quick click link simulation for easy evaluation */}
-            {resetLink && (
-              <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800/60">
-                <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold mb-1">
-                  Demo Simulated Email Link:
-                </p>
-                <a
-                  href={resetLink}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono break-all"
-                >
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                  Click to open Password Reset page
-                </a>
-              </div>
+            {/* The token is never sent to the browser; it is printed server-side. */}
+            {process.env.NODE_ENV !== "production" && (
+              <p className="pt-2 border-t border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-700 dark:text-emerald-400">
+                Local demo: the reset link is printed in the server terminal.
+              </p>
             )}
           </div>
         )}

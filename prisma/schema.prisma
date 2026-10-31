@@ -88,47 +88,56 @@ model Product {
   id            String                  @id @default(uuid())
   name          String
   type          String                  @default("Software")
-  salesPrice    Float                   @default(0.0)
-  costPrice     Float                   @default(0.0)
+  salesPrice    Float                   @default(0.0) @map("sales_price")
+  costPrice     Float                   @default(0.0) @map("cost_price")
   notes         String?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
 
   variants      ProductVariant[]
   subLines      SubscriptionLine[]
   invoiceLines  InvoiceLine[]
   templateLines QuotationTemplateLine[]
   discounts     DiscountRule[]
+
+  @@map("products")
 }
 
 model ProductVariant {
   id         String   @id @default(uuid())
-  productId  String
+  productId  String   @map("product_id")
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name       String   // e.g. "Odoo Brand"
-  extraPrice Float    @default(0.0) // e.g. +560.0
-  createdAt  DateTime @default(now())
+  attribute  String?  // e.g. "brand"
+  value      String?  // e.g. "Odoo"
+  name       String?  // e.g. "Odoo Brand"
+  extraPrice Float    @default(0.0) @map("extra_price") // e.g. +560.0
+  createdAt  DateTime @default(now()) @map("created_at")
 
   subLines   SubscriptionLine[]
+
+  @@map("product_variants")
 }
 
 model Plan {
   id            String              @id @default(uuid())
   name          String
-  cost          Float               @default(0.0)
-  frequency     BillingFrequency    @default(MONTHLY)
-  minQuantity   Int                 @default(1)
-  startDate     DateTime?
-  endDate       DateTime?
-  autoClose     Boolean             @default(true)
-  canCloseEarly Boolean             @default(true)
-  canPause      Boolean             @default(true)
-  canRenew      Boolean             @default(true)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  cost          Float               @default(0.0) @map("price")
+  frequency     BillingFrequency    @default(MONTHLY) @map("billing_period")
+  minQuantity   Int                 @default(1) @map("min_quantity")
+  startDate     DateTime?           @map("start_date")
+  endDate       DateTime?           @map("end_date")
+  autoClose     Boolean             @default(true) @map("auto_close")
+  canCloseEarly Boolean             @default(true) @map("closable")
+  canPause      Boolean             @default(true) @map("pausable")
+  canRenew      Boolean             @default(true) @map("renewable")
+  status        String              @default("ACTIVE") // ACTIVE, CLOSED, PAUSED
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   subscriptions Subscription[]
   templates     QuotationTemplate[]
+
+  @@map("plans")
 }
 
 model QuotationTemplate {
@@ -195,6 +204,8 @@ model Invoice {
   customer       User          @relation(fields: [customerId], references: [id])
   subscriptionId String?
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  periodStart    DateTime?
+  periodEnd      DateTime?
   status         InvoiceStatus @default(DRAFT)
   invoiceDate    DateTime      @default(now())
   dueDate        DateTime
@@ -203,11 +214,14 @@ model Invoice {
   discountAmount Float         @default(0.0)
   totalAmount    Float         @default(0.0)
   notes          String?
+  sentAt         DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   lines          InvoiceLine[]
   payments       Payment[]
+
+  @@unique([subscriptionId, periodStart])
 }
 
 model InvoiceLine {
@@ -226,27 +240,31 @@ model InvoiceLine {
 model TaxRule {
   id             String   @id @default(uuid())
   name           String   // e.g. "VAT 10%", "Sales Tax 5%"
-  ratePercentage Float    @default(0.0)
-  isDefault      Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  ratePercentage Float    @default(0.0) @map("percentage")
+  isDefault      Boolean  @default(false) @map("is_default")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("taxes")
 }
 
 model DiscountRule {
   id                String         @id @default(uuid())
-  code              String         @unique
+  code              String?        @unique
   name              String
   type              DiscountType   @default(PERCENTAGE)
   value             Float          @default(0.0) // e.g. 15 for 15% or 50.0 for flat 50
-  minPurchaseAmount Float?
-  minQuantity       Int?
-  startDate         DateTime?
-  endDate           DateTime?
-  usageLimit        Int?           @default(100)
-  timesUsed         Int            @default(0)
-  targetType        DiscountTarget @default(WHOLE_SUBSCRIPTION)
-  targetProductId   String?
+  minPurchaseAmount Float?         @map("min_purchase")
+  minQuantity       Int?           @map("min_quantity")
+  startDate         DateTime?      @map("start_date")
+  endDate           DateTime?      @map("end_date")
+  usageLimit        Int?           @default(100) @map("usage_limit")
+  timesUsed         Int            @default(0) @map("used_count")
+  targetType        DiscountTarget @default(WHOLE_SUBSCRIPTION) @map("applies_to")
+  targetProductId   String?        @map("product_id")
   targetProduct     Product?       @relation(fields: [targetProductId], references: [id])
-  createdAt         DateTime       @default(now())
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("discounts")
 }
 
 model Payment {
