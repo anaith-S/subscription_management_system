@@ -45,13 +45,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       headers.set("Content-Type", "application/json");
 
-      return fetch(url, {
+      const res = await fetch(url, {
         ...options,
         headers,
         credentials: "same-origin",
       });
+
+      // The session is gone (expired, or the user was deleted, e.g. by a
+      // re-seed). Clear the stale cookie and send the user back to sign in.
+      if (res.status === 401 && !url.startsWith("/api/auth/")) {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+        setUser(null);
+        setToken(null);
+        router.push("/auth/login?expired=1");
+      }
+
+      return res;
     },
-    [token]
+    [token, router]
   );
 
   // Initialize and verify user on mount
@@ -67,6 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
           setToken(null);
+          // A cookie that no longer maps to a user would keep the proxy letting
+          // this browser into private pages; clear it.
+          if (res.status === 401) {
+            await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+          }
         }
       } catch (err) {
         console.error("Auth initialization error:", err);
