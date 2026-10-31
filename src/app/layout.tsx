@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/instrument-sans";
+import "@fontsource-variable/bricolage-grotesque";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Brightloop Software - Subscription Management System",
-  description: "Unified recurring billing, subscription engine, customer portal & payments platform.",
+  title: "Brightloop | Subscriptions and billing",
+  description: "Plans, subscriptions, invoices, payments and recurring revenue in one place.",
 };
 
 export default function RootLayout({

@@ -3,185 +3,137 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { 
-  LogOut, 
-  User as UserIcon, 
-  Menu, 
-  X, 
-  ShieldAlert, 
-  Briefcase, 
-  UserCheck,
-  ChevronDown
-} from "lucide-react";
+import { LogOut, Menu, ChevronDown, Users, UserCircle } from "lucide-react";
+import { LogoMark } from "@/components/brand/Logo";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
 }
 
+const DEMO_ACCOUNTS = [
+  { role: "ADMIN", label: "Admin", email: "admin@brightloop.com", password: "Admin123!@#" },
+  { role: "STAFF", label: "Staff", email: "staff@brightloop.com", password: "Staff123!@#" },
+  { role: "CUSTOMER", label: "Customer", email: "customer@acme.com", password: "Customer123!@#" },
+] as const;
+
+// The role switcher signs in with the seeded demo accounts. Useful while
+// developing and demoing, but it must never ship in a production build.
+const SHOW_DEMO_SWITCHER = process.env.NODE_ENV !== "production";
+
 export default function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
   const { user, logout, login } = useAuth();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const getRoleBadge = (role?: string) => {
-    switch (role?.toUpperCase()) {
-      case "ADMIN":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-            <ShieldAlert className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-            Admin
-          </span>
-        );
-      case "STAFF":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-            <Briefcase className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-            Staff
-          </span>
-        );
-      case "CUSTOMER":
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <UserCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-            Customer
-          </span>
-        );
-    }
-  };
+  const initials = (user?.name ?? "")
+    .replace(/\(.*?\)/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-        {/* Left: Mobile Toggle & Brand */}
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-zinc-50/85 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/85">
+      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
+        <div className="flex items-center gap-3 lg:hidden">
           <button
             onClick={onToggleSidebar}
-            className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:hidden"
-            aria-label="Toggle navigation menu"
+            className="rounded-lg p-2 text-zinc-700 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            aria-label="Open navigation"
+            aria-expanded={isSidebarOpen}
           >
-            {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <Menu className="h-5 w-5" />
           </button>
-
-          <Link href={user ? (user.role === "CUSTOMER" ? "/portal" : "/dashboard") : "/"} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20">
-              BL
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
-                Brightloop
-              </span>
-              <span className="text-[10px] font-medium tracking-wide uppercase text-zinc-500 dark:text-zinc-400">
-                Subscription Engine
-              </span>
-            </div>
-          </Link>
+          <LogoMark tone="dark" size={24} />
         </div>
 
-        {/* Right: Quick Demo Switcher + User Details & Actions */}
+        <div className="hidden lg:block" />
+
         <div className="flex items-center gap-3">
-          {/* Quick Demo Switcher for fast testing during evaluation */}
-          <div className="hidden md:flex items-center gap-1.5 px-2 py-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-xs border border-zinc-200 dark:border-zinc-800">
-            <span className="text-zinc-500 font-medium px-1">Quick Switch:</span>
-            <button
-              onClick={() => login("admin@brightloop.com", "Admin123!@#")}
-              className={`px-2 py-1 rounded font-medium transition ${
-                user?.role === "ADMIN"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-purple-600 hover:bg-white dark:hover:bg-zinc-800"
-              }`}
+          {SHOW_DEMO_SWITCHER && (
+            <div
+              className="hidden md:flex items-center rounded-full border border-dashed border-zinc-300 p-0.5 text-[12px] dark:border-zinc-700"
+              title="Development only: sign in as a seeded demo account"
             >
-              Admin
-            </button>
-            <button
-              onClick={() => login("staff@brightloop.com", "Staff123!@#")}
-              className={`px-2 py-1 rounded font-medium transition ${
-                user?.role === "STAFF"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-blue-600 hover:bg-white dark:hover:bg-zinc-800"
-              }`}
-            >
-              Staff
-            </button>
-            <button
-              onClick={() => login("customer@acme.com", "Customer123!@#")}
-              className={`px-2 py-1 rounded font-medium transition ${
-                user?.role === "CUSTOMER"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 hover:bg-white dark:hover:bg-zinc-800"
-              }`}
-            >
-              Customer
-            </button>
-          </div>
+              <span className="px-2.5 text-zinc-500">View as</span>
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.role}
+                  onClick={() => login(account.email, account.password)}
+                  className={`rounded-full px-2.5 py-1 font-medium transition-colors ${
+                    user?.role === account.role
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                  }`}
+                >
+                  {account.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {user ? (
             <div className="relative">
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2.5 rounded-full p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 font-semibold text-xs border border-zinc-300 dark:border-zinc-700">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="hidden sm:flex flex-col text-left">
-                  <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 max-w-[130px] truncate">
-                    {user.name}
-                  </span>
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {user.email}
-                  </span>
-                </div>
-                {getRoleBadge(user.role)}
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-700 text-[12px] font-semibold text-white">
+                  {initials || "?"}
+                </span>
+                <span className="hidden sm:block max-w-[160px] truncate text-[13px] font-medium text-zinc-800 dark:text-zinc-200">
+                  {user.name}
+                </span>
+                <ChevronDown className="h-4 w-4 text-zinc-500" />
               </button>
 
-              {dropdownOpen && (
+              {menuOpen && (
                 <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                   <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setDropdownOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 z-50">
-                    <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-1">
-                      <p className="text-xs font-medium text-zinc-500">Signed in as</p>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                        {user.name}
-                      </p>
-                      <div className="mt-1">{getRoleBadge(user.role)}</div>
+                    role="menu"
+                    className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="px-3 py-2.5">
+                      <p className="truncate text-[14px] font-semibold text-zinc-900 dark:text-white">{user.name}</p>
+                      <p className="truncate text-[12px] text-zinc-500">{user.email}</p>
                     </div>
-
+                    <div className="my-1 h-px bg-zinc-100 dark:bg-zinc-800" />
                     {user.role === "ADMIN" && (
                       <Link
                         href="/admin/staff"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                       >
-                        <UserIcon className="h-4 w-4" />
-                        Staff Management
+                        <Users className="h-4 w-4 text-zinc-500" />
+                        Manage staff
                       </Link>
                     )}
-
                     {user.role === "CUSTOMER" && (
                       <Link
-                        href="/portal"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        href="/portal#profile"
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                       >
-                        <UserCheck className="h-4 w-4" />
-                        Customer Portal
+                        <UserCircle className="h-4 w-4 text-zinc-500" />
+                        Profile
                       </Link>
                     )}
-
                     <button
+                      role="menuitem"
                       onClick={() => {
-                        setDropdownOpen(false);
+                        setMenuOpen(false);
                         logout();
                       }}
-                      className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                     >
                       <LogOut className="h-4 w-4" />
-                      Sign Out
+                      Sign out
                     </button>
                   </div>
                 </>
@@ -189,17 +141,11 @@ export default function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) 
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link
-                href="/auth/login"
-                className="rounded-lg px-3.5 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                Log In
+              <Link href="/auth/login" className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200/60">
+                Sign in
               </Link>
-              <Link
-                href="/auth/register"
-                className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 shadow-sm transition"
-              >
-                Sign Up
+              <Link href="/auth/register" className="rounded-lg bg-indigo-700 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-indigo-800">
+                Create account
               </Link>
             </div>
           )}

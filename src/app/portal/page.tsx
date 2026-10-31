@@ -98,31 +98,19 @@ export default function CustomerPortalPage() {
     <AppShell>
       <div className="space-y-8">
         {/* Welcome Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-xl">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-                Customer Self-Service Portal
-              </span>
-              <span className="text-xs text-indigo-200 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Scoped to Your Account
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Welcome, {user?.name || "Valued Customer"}
-            </h1>
-            <p className="text-xs sm:text-sm text-indigo-200">
-              Manage your active Brightloop software subscriptions, review billing history, and download invoices.
-            </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">{user?.name ?? "Your account"}</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Your subscriptions and invoices with Brightloop Software.</p>
           </div>
 
           <button
             onClick={fetchPortalData}
             disabled={loading}
-            className="self-start md:self-auto flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold backdrop-blur border border-white/20 transition disabled:opacity-50"
+            className="self-start sm:self-auto flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh Records
+            Refresh
           </button>
         </div>
 
@@ -130,7 +118,7 @@ export default function CustomerPortalPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Active Subscriptions</span>
+              <span className="text-xs font-medium">Active Subscriptions</span>
               <Repeat className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -141,7 +129,7 @@ export default function CustomerPortalPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Invoices</span>
+              <span className="text-xs font-medium">Total Invoices</span>
               <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -152,7 +140,7 @@ export default function CustomerPortalPage() {
 
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Paid</span>
+              <span className="text-xs font-medium">Total Paid</span>
               <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -193,7 +181,7 @@ export default function CustomerPortalPage() {
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
+                  <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold">
                     <tr>
                       <th className="px-5 py-3.5">Subscription #</th>
                       <th className="px-5 py-3.5">Plan</th>
@@ -266,7 +254,7 @@ export default function CustomerPortalPage() {
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
+                  <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold">
                     <tr>
                       <th className="px-5 py-3.5">Invoice #</th>
                       <th className="px-5 py-3.5">Issue Date</th>

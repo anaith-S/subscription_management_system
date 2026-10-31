@@ -1,26 +1,213 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Brightloop design tokens.
+ *
+ * The pages were written with Tailwind's stock indigo/purple/zinc classes.
+ * Instead of rewriting every class name, the brand palette is mapped onto
+ * those scales here, so `bg-indigo-600` renders Brightloop petrol everywhere
+ * and the whole app changes look from one file.
+ *
+ *   petrol   #174F55  brand, primary actions, chrome
+ *   deep     #0E2A2E  sidebar / dark surfaces
+ *   paper    #F5F7F6  app background
+ *   line     #DDE3E0  borders
+ *   marigold #F2A93B  the one accent: "today", billing day, the loop
+ *   coral    #E0604A  overdue
+ */
+@theme {
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Instrument Sans Variable", ui-sans-serif, sans-serif;
+  /* No separate monospace face: IDs and amounts use the UI font with tabular figures */
+  --font-mono: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand: petrol (replaces indigo) */
+  --color-indigo-50: #eef6f6;
+  --color-indigo-100: #d6eaea;
+  --color-indigo-200: #acd4d5;
+  --color-indigo-300: #7ab7ba;
+  --color-indigo-400: #4a989d;
+  --color-indigo-500: #2a7b81;
+  --color-indigo-600: #1c636a;
+  --color-indigo-700: #174f55;
+  --color-indigo-800: #143f44;
+  --color-indigo-900: #112f33;
+  --color-indigo-950: #0a1e21;
+
+  /* Purple/violet were used for "admin" accents and gradients: deep petrol tones */
+  --color-purple-50: #eef4f4;
+  --color-purple-100: #d9e8e9;
+  --color-purple-200: #b3d0d2;
+  --color-purple-300: #85b1b4;
+  --color-purple-400: #568f93;
+  --color-purple-500: #3a7479;
+  --color-purple-600: #2a5f64;
+  --color-purple-700: #214b4f;
+  --color-purple-800: #1a3b3f;
+  --color-purple-900: #0e2a2e;
+  --color-purple-950: #081b1e;
+  --color-violet-50: #eef4f4;
+  --color-violet-100: #d9e8e9;
+  --color-violet-500: #3a7479;
+  --color-violet-600: #2a5f64;
+  --color-violet-700: #214b4f;
+
+  /* Marigold accent (replaces amber, which pages use for "pending/attention") */
+  --color-amber-50: #fef7ea;
+  --color-amber-100: #fdecc8;
+  --color-amber-200: #fad78f;
+  --color-amber-300: #f7c160;
+  --color-amber-400: #f4b34a;
+  --color-amber-500: #f2a93b;
+  --color-amber-600: #d98a1c;
+  --color-amber-700: #b46c14;
+  --color-amber-800: #8f5414;
+  --color-amber-900: #744514;
+  --color-amber-950: #432407;
+
+  /* Coral for overdue / destructive (replaces rose) */
+  --color-rose-50: #fdf1ef;
+  --color-rose-100: #fbe0db;
+  --color-rose-200: #f6c0b6;
+  --color-rose-300: #ef9887;
+  --color-rose-400: #e77962;
+  --color-rose-500: #e0604a;
+  --color-rose-600: #c9472f;
+  --color-rose-700: #a73a26;
+  --color-rose-800: #8a3324;
+  --color-rose-900: #732f23;
+  --color-rose-950: #3e140d;
+
+  /* Neutrals with a faint green-grey cast (replaces zinc) */
+  --color-zinc-50: #f5f7f6;
+  --color-zinc-100: #ecf0ee;
+  --color-zinc-200: #dde3e0;
+  --color-zinc-300: #c4cdc9;
+  --color-zinc-400: #94a19b;
+  --color-zinc-500: #67746e;
+  --color-zinc-600: #4d5954;
+  --color-zinc-700: #3a4440;
+  --color-zinc-800: #262e2b;
+  --color-zinc-900: #18201d;
+  --color-zinc-950: #0f1513;
+
+
+  /* Red follows the same coral as rose, so errors and overdue match */
+  --color-red-50: #fdf1ef;
+  --color-red-100: #fbe0db;
+  --color-red-200: #f6c0b6;
+  --color-red-300: #ef9887;
+  --color-red-400: #e77962;
+  --color-red-500: #e0604a;
+  --color-red-600: #c9472f;
+  --color-red-700: #a73a26;
+  --color-red-800: #8a3324;
+  --color-red-900: #732f23;
+  --color-red-950: #3e140d;
+
+  /* Blue ("open / in progress") calmed to a slate blue that sits with petrol */
+  --color-blue-50: #f0f5fa;
+  --color-blue-100: #dde8f3;
+  --color-blue-200: #bdd2e8;
+  --color-blue-300: #93b4d7;
+  --color-blue-400: #6892c2;
+  --color-blue-500: #4b76aa;
+  --color-blue-600: #3a5f8f;
+  --color-blue-700: #304d74;
+  --color-blue-800: #2b4161;
+  --color-blue-900: #273851;
+  --color-blue-950: #1a2436;
+
+  /* Emerald ("paid") as a deeper leaf green */
+  --color-emerald-50: #eff8f2;
+  --color-emerald-100: #d8efe0;
+  --color-emerald-200: #b2dec4;
+  --color-emerald-300: #82c6a1;
+  --color-emerald-400: #52a87b;
+  --color-emerald-500: #348d61;
+  --color-emerald-600: #26744f;
+  --color-emerald-700: #205d41;
+  --color-emerald-800: #1c4a36;
+  --color-emerald-900: #183d2e;
+  --color-emerald-950: #0c2219;
+
+  --color-brand: #174f55;
+  --color-deep: #0e2a2e;
+  --color-paper: #f5f7f6;
+  --color-marigold: #f2a93b;
+  --color-coral: #e0604a;
+
+  /* 12px is too small to work in all day; the pages use text-xs a lot */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1,
+  h2,
+  .font-display {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 48;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    letter-spacing: -0.03em;
+  }
+
+  /* Money and dates line up in columns */
+  table,
+  .tabular,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-marigold);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: #fad78f;
+    color: #0e2a2e;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* One orchestrated moment: the loop draws itself once on first paint. */
+@keyframes loop-draw {
+  from {
+    stroke-dashoffset: var(--loop-length);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.loop-draw {
+  stroke-dasharray: var(--loop-length);
+  animation: loop-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) both;
 }

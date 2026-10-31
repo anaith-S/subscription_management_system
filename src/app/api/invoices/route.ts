@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, customerScopingHelper } from "@/lib/deps";
 import { AppError, errorResponse } from "@/lib/errors";
-import { InvoiceStatus } from "@prisma/client";
+import { InvoiceStatus, Prisma } from "@prisma/client";
+import { parsePagination, parseSearch } from "@/lib/pagination";
 
 // GET /api/invoices - List invoices filterable by status and customer
 export async function GET(req: NextRequest) {
@@ -31,8 +32,22 @@ export async function GET(req: NextRequest) {
     whereFilter = customerScopingHelper(user, whereFilter);
     delete whereFilter.customer_id; // snake_case alias isn't a Prisma field
 
-    const invoices = await prisma.invoice.findMany({
-      where: whereFilter,
+    const search = parseSearch(searchParams);
+    if (search) {
+      whereFilter.OR = [
+        { invoiceNumber: { contains: search } },
+        { customer: { name: { contains: search } } },
+        { customer: { email: { contains: search } } },
+      ];
+    }
+    const where = whereFilter as Prisma.InvoiceWhereInput;
+    const { page, pageSize, skip, take } = parsePagination(searchParams);
+
+    const [invoices, total] = await prisma.$transaction([
+      prisma.invoice.findMany({
+      where,
+      skip,
+      take,
       include: {
         customer: {
           select: { id: true, name: true, email: true },
@@ -44,9 +59,11 @@ export async function GET(req: NextRequest) {
         payments: true,
       },
       orderBy: { createdAt: "desc" },
-    });
+      }),
+      prisma.invoice.count({ where }),
+    ]);
 
-    return NextResponse.json({ invoices });
+    return NextResponse.json({ invoices, total, page, pageSize });
   } catch (error) {
     return errorResponse(error, "Failed to fetch invoices");
   }

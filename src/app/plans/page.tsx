@@ -172,19 +172,10 @@ export default function PlansPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
-                <Layers className="w-6 h-6" />
-              </span>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Billing Plans Configuration
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Configure billing frequencies (Daily, Weekly, Monthly, Yearly), auto-close expired plans, and action flags.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Plans</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">How often each plan bills, its minimum quantity and availability dates, and whether it can be paused, renewed or closed early.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -200,7 +191,7 @@ export default function PlansPage() {
             {isAdmin && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm shadow-indigo-500/20 transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm shadow-sm transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 New Plan
@@ -244,7 +235,7 @@ export default function PlansPage() {
                   <div>
                     {/* Header: Frequency badge & Status */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
                         {p.billing_period}
                       </span>
 
@@ -391,7 +382,7 @@ export default function PlansPage() {
 
               <form onSubmit={handleCreatePlan} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Plan Name *
                   </label>
                   <input
@@ -406,7 +397,7 @@ export default function PlansPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Billing Period (Frequency) *
                     </label>
                     <select
@@ -421,7 +412,7 @@ export default function PlansPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Price ($) *
                     </label>
                     <input
@@ -437,7 +428,7 @@ export default function PlansPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Minimum Quantity *
                     </label>
                     <input
@@ -453,7 +444,7 @@ export default function PlansPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Start Date
                     </label>
                     <input
@@ -464,7 +455,7 @@ export default function PlansPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       End Date
                     </label>
                     <input
@@ -545,7 +536,7 @@ export default function PlansPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm"
+                    className="px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-xl shadow-sm"
                   >
                     Save Plan
                   </button>

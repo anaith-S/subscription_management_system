@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, customerScopingHelper, require_role } from "@/lib/deps";
 import { createSubscription } from "@/lib/subscription-service";
 import { AppError, errorResponse, parseOptionalDate } from "@/lib/errors";
-import { SubscriptionStatus } from "@prisma/client";
+import { Prisma, SubscriptionStatus } from "@prisma/client";
+import { parsePagination, parseSearch } from "@/lib/pagination";
 
 // GET /api/subscriptions - List subscriptions (filtered by status and customer)
 export async function GET(req: NextRequest) {
@@ -33,8 +34,22 @@ export async function GET(req: NextRequest) {
     whereFilter = customerScopingHelper(user, whereFilter);
     delete whereFilter.customer_id; // snake_case alias isn't a Prisma field
 
-    const subscriptions = await prisma.subscription.findMany({
-      where: whereFilter,
+    const search = parseSearch(searchParams);
+    if (search) {
+      whereFilter.OR = [
+        { subscriptionNumber: { contains: search } },
+        { customer: { name: { contains: search } } },
+        { customer: { email: { contains: search } } },
+      ];
+    }
+    const where = whereFilter as Prisma.SubscriptionWhereInput;
+    const { page, pageSize, skip, take } = parsePagination(searchParams);
+
+    const [subscriptions, total] = await prisma.$transaction([
+      prisma.subscription.findMany({
+      where,
+      skip,
+      take,
       include: {
         customer: {
           select: { id: true, name: true, email: true },
@@ -55,12 +70,15 @@ export async function GET(req: NextRequest) {
             invoiceDate: true,
           },
           orderBy: { createdAt: "desc" },
+          take: 3,
         },
       },
       orderBy: { createdAt: "desc" },
-    });
+      }),
+      prisma.subscription.count({ where }),
+    ]);
 
-    return NextResponse.json({ subscriptions });
+    return NextResponse.json({ subscriptions, total, page, pageSize });
   } catch (error) {
     return errorResponse(error, "Failed to fetch subscriptions");
   }

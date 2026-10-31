@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
+import Pager from "@/components/ui/Pager";
 import { useAuth } from "@/context/AuthContext";
 import {
   Receipt,
@@ -43,6 +44,20 @@ export default function InvoicesPage() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const PAGE_SIZE = 25;
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -53,10 +68,13 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const url = filterStatus !== "ALL" ? `/api/invoices?status=${filterStatus}` : "/api/invoices";
+      const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+      if (filterStatus !== "ALL") params.set("status", filterStatus);
+      if (debouncedSearch) params.set("q", debouncedSearch);
+      const url = `/api/invoices?${params.toString()}`;
       const res = await fetch(url);
       const data = await res.json();
-      if (data.invoices) setInvoices(data.invoices);
+      if (data.invoices) setInvoices(data.invoices); setTotal(data.total ?? data.invoices.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -66,7 +84,8 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [filterStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, page, debouncedSearch]);
 
   const handleInvoiceAction = async (invoiceId: string, action: "confirm" | "cancel" | "send" | "pay") => {
     setActionLoadingId(invoiceId);
@@ -128,29 +147,20 @@ export default function InvoicesPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-                <Receipt className="w-5 h-5" />
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Invoices & Recurring Billing
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Automated invoice tracking, status progression (Draft ➔ Confirmed ➔ Paid), and delivery.
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Invoices</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">Invoices move from draft to confirmed to paid. Run billing day to invoice every subscription that’s due.</p>
           </div>
 
           {isStaffOrAdmin && (
             <button
               onClick={handleRunBilling}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-marigold hover:bg-amber-400 text-deep transition-colors disabled:opacity-60"
             >
               <Zap className="w-4 h-4" />
-              Run Billing Day
+              Run billing day
             </button>
           )}
         </div>
@@ -161,7 +171,10 @@ export default function InvoicesPage() {
             {["ALL", "DRAFT", "CONFIRMED", "PAID", "CANCELLED"].map((st) => (
               <button
                 key={st}
-                onClick={() => setFilterStatus(st)}
+                onClick={() => {
+                  setFilterStatus(st);
+                  setPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   filterStatus === st
                     ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-zinc-200 dark:border-zinc-700 font-semibold"
@@ -173,12 +186,25 @@ export default function InvoicesPage() {
             ))}
           </div>
 
+          <div className="flex flex-1 items-center justify-end gap-2">
+          <label className="relative min-w-[220px] max-w-[340px] flex-1">
+            <span className="sr-only">Search invoices</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by invoice number, customer or email"
+              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-[13px] placeholder:text-zinc-400 focus:border-indigo-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
           <button
             onClick={fetchInvoices}
             className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
+          </div>
         </div>
 
         {/* Invoices List */}
@@ -202,7 +228,7 @@ export default function InvoicesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-500 uppercase tracking-wider text-[11px]">
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-500 text-[11px]">
                     <th className="py-3.5 px-4 font-semibold">Invoice #</th>
                     <th className="py-3.5 px-4 font-semibold">Customer</th>
                     <th className="py-3.5 px-4 font-semibold">Subscription / Plan</th>
@@ -351,6 +377,9 @@ export default function InvoicesPage() {
                 </tbody>
               </table>
             </div>
+          )}
+          {total > 0 && (
+            <Pager page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} noun="invoices" />
           )}
         </div>
 

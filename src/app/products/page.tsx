@@ -178,25 +178,16 @@ export default function ProductsPage() {
     <AppShell>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                <Package className="w-6 h-6" />
-              </span>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Products & Variants Catalog
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Manage base products, cost/sales pricing and product variants (e.g. Brand = Odoo adds +$560).
-            </p>
+            <h1 className="text-[30px] sm:text-[36px] font-semibold leading-tight text-zinc-900 dark:text-white">Products</h1>
+            <p className="mt-1.5 max-w-[68ch] text-[15px] text-zinc-600 dark:text-zinc-400">What Brightloop sells, with sales and cost prices. Variants add to the base price, for example the Odoo brand adds $560.</p>
           </div>
 
           {isAdmin ? (
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm shadow-indigo-500/20 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm shadow-sm transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Add Product
@@ -240,7 +231,7 @@ export default function ProductsPage() {
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 uppercase tracking-wide">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                         {p.type}
                       </span>
                       <h2 className="text-lg font-bold text-zinc-900 dark:text-white mt-1">
@@ -282,7 +273,7 @@ export default function ProductsPage() {
                   {/* Variants Section */}
                   <div className="mt-5">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
                         <Tag className="w-3.5 h-3.5" />
                         <span>Product Variants ({p.variants.length})</span>
                       </div>
@@ -363,7 +354,7 @@ export default function ProductsPage() {
 
               <form onSubmit={handleCreateProduct} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Product Name *
                   </label>
                   <input
@@ -378,7 +369,7 @@ export default function ProductsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Type
                     </label>
                     <select
@@ -393,7 +384,7 @@ export default function ProductsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Sales Price ($) *
                     </label>
                     <input
@@ -409,7 +400,7 @@ export default function ProductsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                       Cost Price ($)
                     </label>
                     <input
@@ -423,7 +414,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Notes
                   </label>
                   <textarea
@@ -445,7 +436,7 @@ export default function ProductsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm"
+                    className="px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-xl shadow-sm"
                   >
                     Save Product
                   </button>
@@ -468,7 +459,7 @@ export default function ProductsPage() {
 
               <form onSubmit={handleAddVariant} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Attribute (e.g. brand, tier, region)
                   </label>
                   <input
@@ -482,7 +473,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Value (e.g. Odoo, Enterprise, US-East)
                   </label>
                   <input
@@ -496,7 +487,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-medium text-zinc-800 dark:text-zinc-200 mb-1">
                     Extra Price ($) (e.g. +560)
                   </label>
                   <input
@@ -530,7 +521,7 @@ export default function ProductsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow-sm"
+                    className="px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-xl shadow-sm"
                   >
                     Add Variant
                   </button>

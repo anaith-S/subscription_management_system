@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import AuthLayout from "@/components/brand/AuthLayout";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, Key, ArrowRight, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
@@ -67,22 +68,14 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
-      {/* Header */}
-      <div className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-xl shadow-lg shadow-indigo-500/25">
-          BL
-        </div>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-          Create New Password
-        </h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Enter your reset token and new secure password
-        </p>
+    <div className="w-full space-y-8">
+      <div>
+        <h1 className="text-[34px] font-semibold leading-tight text-zinc-900 dark:text-white">Choose a new password</h1>
+        <p className="mt-2 text-[15px] text-zinc-600 dark:text-zinc-400">Use the token from your reset email, then pick a new password.</p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 flex items-start gap-3 text-red-700 dark:text-red-400 text-sm">
+        <div className="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 p-3.5 flex items-start gap-3 text-red-700 dark:text-red-400 text-sm">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
           <span>{error}</span>
         </div>
@@ -103,11 +96,11 @@ function ResetPasswordForm() {
       {!success && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Reset Token
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              Reset token
             </label>
             <div className="relative">
-              <Key className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
                 required
@@ -120,35 +113,35 @@ function ResetPasswordForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              New Password
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              New password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Confirm New Password
+            <label className="block text-[14px] font-medium text-zinc-800 dark:text-zinc-200 mb-1.5">
+              Confirm New password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-10 py-3 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
               />
             </div>
           </div>
@@ -207,9 +200,9 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={!isFormValid || isSubmitting}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Updating Password..." : "Update Password"}
+            {isSubmitting ? "Saving…" : "Save new password"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
@@ -220,7 +213,7 @@ function ResetPasswordForm() {
           href="/auth/login"
           className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
         >
-          Return to Sign In
+          Back to sign in
         </Link>
       </div>
     </div>
@@ -229,10 +222,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-zinc-50 dark:bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8">
-      <Suspense fallback={<div className="text-zinc-500">Loading password reset form...</div>}>
+    <AuthLayout>
+      <Suspense fallback={<div className="text-zinc-500">Loading…</div>}>
         <ResetPasswordForm />
       </Suspense>
-    </div>
+    </AuthLayout>
   );
 }
