@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Lists every customer and discount code, so internal users only.
+    const { error } = await require_role("ADMIN", "STAFF")(req);
+    if (error) return error;
 
     const [products, plans, customers, taxes, discounts] = await Promise.all([
       prisma.product.findMany({
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       taxes,
       discounts,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch reference data" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch reference data");
   }
 }

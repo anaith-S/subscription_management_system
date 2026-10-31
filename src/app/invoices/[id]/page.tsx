@@ -41,7 +41,12 @@ export default function InvoiceDetailPage() {
       const data = await res.json();
       if (data.invoice) {
         setInvoice(data.invoice);
-        setPaymentAmount(data.invoice.totalAmount);
+        // Default the payment form to what's still owed, not the full total.
+        const paid = (data.invoice.payments ?? []).reduce(
+          (sum: number, p: { amount: number }) => sum + p.amount,
+          0
+        );
+        setPaymentAmount(Math.round((data.invoice.totalAmount - paid) * 100) / 100);
       }
     } catch (err) {
       console.error(err);
@@ -163,7 +168,7 @@ export default function InvoiceDetailPage() {
             {isStaffOrAdmin && (
               <>
                 {/* Send */}
-                {invoice.status !== "CANCELLED" && (
+                {(invoice.status === "CONFIRMED" || invoice.status === "PAID") && (
                   <button
                     disabled={actionLoading}
                     onClick={() => handleAction("send")}

@@ -1,68 +1,34 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { get_current_user } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
+import { transitionSubscription } from "@/lib/subscription-service";
+import { AppError, errorResponse } from "@/lib/errors";
 import { SubscriptionStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  DRAFT: ["QUOTATION", "CONFIRMED"],
-  QUOTATION: ["CONFIRMED", "CLOSED"],
-  CONFIRMED: ["ACTIVE", "CLOSED"],
-  ACTIVE: ["PAUSED", "CLOSED"],
-  PAUSED: ["ACTIVE", "CLOSED"],
-  CLOSED: ["DRAFT", "QUOTATION"], // Re-open as new quote
-};
-
-// PATCH /api/subscriptions/[id]/status - Execute state transition
+// PATCH /api/subscriptions/[id]/status - Execute state transition (Admin / Staff only).
+// Same rules as POST /api/subscriptions/[id]/transition: one state machine, in
+// subscription-service.ts, so the two endpoints can never disagree.
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await get_current_user(req);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { user, error } = await require_role("ADMIN", "STAFF")(req);
+    if (error || !user) return error;
 
     const { id } = await params;
     const body = await req.json();
-    const targetStatus = String(body.status || "").trim().toUpperCase();
+    const targetStatus = String(body.status ?? body.targetStatus ?? "").trim().toUpperCase();
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { id },
-    });
-
-    if (!subscription) {
-      return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
+    if (!Object.values(SubscriptionStatus).includes(targetStatus as SubscriptionStatus)) {
+      throw new AppError(`Invalid status: ${targetStatus || "(missing)"}`);
     }
 
-    const currentStatus = subscription.status;
-    const allowed = VALID_TRANSITIONS[currentStatus] || [];
-
-    if (!allowed.includes(targetStatus)) {
-      return NextResponse.json(
-        {
-          error: `Invalid state transition from ${currentStatus} to ${targetStatus}. Allowed: [${allowed.join(", ")}]`,
-          currentStatus,
-          targetStatus,
-          allowed,
-        },
-        { status: 400 }
-      );
-    }
-
-    const updated = await prisma.subscription.update({
-      where: { id },
-      data: { status: targetStatus as SubscriptionStatus },
-      include: {
-        customer: true,
-        plan: true,
-        lines: { include: { product: true, variant: true } },
-      },
-    });
+    const previous = await transitionSubscription(id, targetStatus as SubscriptionStatus, user);
 
     return NextResponse.json({
-      message: `Status transitioned: ${currentStatus} ➔ ${targetStatus}`,
-      subscription: updated,
+      message: `Status transitioned to ${targetStatus}`,
+      subscription: previous,
     });
-  } catch (error: any) {
-    console.error("Subscription status transition error:", error);
-    return NextResponse.json({ error: "Failed to transition status" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to transition status");
   }
 }
