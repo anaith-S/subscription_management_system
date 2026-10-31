@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 

@@ -12,7 +12,6 @@ import {
   Repeat,
   Receipt,
   CreditCard,
-  Layers,
   Sparkles,
 } from "lucide-react";
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { get_current_user, customer_scoping_helper } from "@/lib/deps";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +21,12 @@ export async function GET(req: Request) {
     const invFilter = customer_scoping_helper(user, {});
 
     // Ensure we filter by customerId for Prisma
-    const whereSub: any = {};
+    const whereSub: Prisma.SubscriptionWhereInput = {};
     if (subFilter.customerId) {
       whereSub.customerId = subFilter.customerId;
     }
 
-    const whereInv: any = {};
+    const whereInv: Prisma.InvoiceWhereInput = {};
     if (invFilter.customerId) {
       whereInv.customerId = invFilter.customerId;
     }
@@ -64,7 +65,7 @@ export async function GET(req: Request) {
       subscriptions,
       invoices,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Portal data error:", error);
     return NextResponse.json(
       { error: "Internal server error fetching portal data" },

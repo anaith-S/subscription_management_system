@@ -1,30 +1,69 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import {
   Repeat,
   Receipt,
   CreditCard,
-  Calendar,
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileText,
   ShieldCheck,
   Building,
   RefreshCw,
-  ExternalLink,
 } from "lucide-react";
+
+interface SubscriptionLineItem {
+  id: string;
+  quantity: number;
+  product?: { name: string };
+  variant?: { name: string };
+}
+
+interface PortalSubscription {
+  id: string;
+  subscriptionNumber: string;
+  status: string;
+  nextBillingDate?: string;
+  plan?: {
+    name: string;
+    frequency: string;
+  };
+  lines?: SubscriptionLineItem[];
+}
+
+interface PortalInvoice {
+  id: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: string;
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+}
+
+interface PortalData {
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  subscriptions: PortalSubscription[];
+  invoices: PortalInvoice[];
+}
 
 export default function CustomerPortalPage() {
   const { user, authFetch, loading: authLoading } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPortalData = async () => {
+  const fetchPortalData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -34,21 +73,41 @@ export default function CustomerPortalPage() {
         throw new Error("Failed to load customer subscription data");
       }
 
-      const result = await res.json();
+      const result: PortalData = await res.json();
       setData(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Fetch error:", err);
-      setError(err.message || "Could not retrieve records");
+      const msg = err instanceof Error ? err.message : "Could not retrieve records";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [authFetch]);
 
   useEffect(() => {
-    if (!authLoading) {
-      fetchPortalData();
+    let ignore = false;
+    if (authLoading) return;
+
+    async function load() {
+      try {
+        const res = await authFetch("/api/portal/data");
+        if (res.ok && !ignore) {
+          const result: PortalData = await res.json();
+          setData(result);
+        }
+      } catch (err: unknown) {
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : "Could not retrieve records");
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
     }
-  }, [authLoading]);
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [authLoading, authFetch]);
 
   const subscriptions = data?.subscriptions || [];
   const invoices = data?.invoices || [];
@@ -91,8 +150,8 @@ export default function CustomerPortalPage() {
   };
 
   const totalSpent = invoices
-    .filter((inv: any) => inv.status === "PAID")
-    .reduce((sum: number, inv: any) => sum + (inv.totalAmount || 0), 0);
+    .filter((inv) => inv.status === "PAID")
+    .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
 
   return (
     <AppShell>
@@ -134,7 +193,7 @@ export default function CustomerPortalPage() {
               <Repeat className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-              {subscriptions.filter((s: any) => s.status === "ACTIVE").length}
+              {subscriptions.filter((s) => s.status === "ACTIVE").length}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">Software plans currently running</p>
           </div>
@@ -204,7 +263,7 @@ export default function CustomerPortalPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {subscriptions.map((sub: any) => (
+                    {subscriptions.map((sub) => (
                       <tr key={sub.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition">
                         <td className="px-5 py-4 font-mono font-medium text-zinc-900 dark:text-white">
                           {sub.subscriptionNumber}
@@ -225,7 +284,7 @@ export default function CustomerPortalPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="space-y-1">
-                            {sub.lines?.map((line: any) => (
+                            {sub.lines?.map((line) => (
                               <div key={line.id} className="text-xs text-zinc-600 dark:text-zinc-400">
                                 • {line.product?.name} (Qty: {line.quantity})
                                 {line.variant && <span className="text-indigo-600 dark:text-indigo-400 ml-1">[{line.variant.name}]</span>}
@@ -278,7 +337,7 @@ export default function CustomerPortalPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {invoices.map((inv: any) => (
+                    {invoices.map((inv) => (
                       <tr key={inv.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition">
                         <td className="px-5 py-4 font-mono font-medium text-zinc-900 dark:text-white">
                           {inv.invoiceNumber}

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { extractTokenFromRequest, verifyToken, JWTPayload } from "@/lib/auth";
+import { extractTokenFromRequest, verifyToken } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 
 export interface AuthenticatedUser {
@@ -91,7 +91,7 @@ export const requireRole = require_role;
  *   const whereClause = customer_scoping_helper(user, { status: "ACTIVE" });
  *   prisma.subscription.findMany({ where: whereClause });
  */
-export function customer_scoping_helper<T extends Record<string, any>>(
+export function customer_scoping_helper<T extends Record<string, unknown>>(
   user: { id: string; role: string },
   baseQuery: T = {} as T
 ): T & { customerId?: string; customer_id?: string } {

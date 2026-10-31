@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: "Password has been successfully updated. You may now log in.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Reset password error:", error);
     return NextResponse.json(
       { error: "Internal server error during password reset" },

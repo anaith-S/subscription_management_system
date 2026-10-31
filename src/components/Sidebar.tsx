@@ -18,7 +18,6 @@ import {
   UserCheck,
   ShieldAlert,
   Briefcase,
-  HelpCircle,
 } from "lucide-react";
 
 interface SidebarProps {

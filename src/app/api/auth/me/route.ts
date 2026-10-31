@@ -24,7 +24,7 @@ export async function GET(req: Request) {
         createdAt: user.createdAt,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Auth me error:", error);
     return NextResponse.json(
       { error: "Internal server error fetching user profile" },

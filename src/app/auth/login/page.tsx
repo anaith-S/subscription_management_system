@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, KeyRound } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, KeyRound } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();

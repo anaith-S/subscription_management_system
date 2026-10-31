@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -13,20 +13,27 @@ import {
   Mail,
   User,
   Lock,
-  Calendar,
-  Briefcase,
 } from "lucide-react";
+
+interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 export default function AdminStaffPage() {
   const { user, authFetch } = useAuth();
-  const [staffList, setStaffList] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Password policy live validation
   const hasMinLength = password.length > 8;
@@ -35,24 +42,41 @@ export default function AdminStaffPage() {
   const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
   const isFormValid = hasMinLength && hasUppercase && hasLowercase && hasSpecial && name.trim().length > 0 && email.trim().length > 0;
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const res = await authFetch("/api/auth/staff");
       if (res.ok) {
         const data = await res.json();
         setStaffList(data.staff || []);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Fetch staff error:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [authFetch]);
 
   useEffect(() => {
-    fetchStaff();
-  }, []);
+    let ignore = false;
+    async function load() {
+      try {
+        const res = await authFetch("/api/auth/staff");
+        if (res.ok && !ignore) {
+          const data = await res.json();
+          setStaffList(data.staff || []);
+        }
+      } catch (err: unknown) {
+        console.error("Fetch staff error:", err);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [authFetch]);
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +105,9 @@ export default function AdminStaffPage() {
         setPassword("");
         fetchStaff();
       }
-    } catch (err: any) {
-      setError(err.message || "Network error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -236,7 +261,9 @@ export default function AdminStaffPage() {
                 <Users className="w-5 h-5 text-blue-600" />
                 Internal Team Roster
               </h2>
-              <span className="text-xs text-zinc-500">{staffList.length} total members</span>
+              <span className="text-xs text-zinc-500">
+                {isLoading ? "Loading..." : `${staffList.length} total members`}
+              </span>
             </div>
 
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">

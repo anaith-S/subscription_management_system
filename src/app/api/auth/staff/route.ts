@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   try {
     // 1. Verify caller is an admin
     const checkRole = require_role("ADMIN");
-    const { user: caller, error } = await checkRole(req);
+    const { error } = await checkRole(req);
 
     if (error) {
       return error;
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Staff creation error:", error);
     return NextResponse.json(
       { error: "Internal server error creating staff member" },
@@ -105,7 +105,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ staff: staffMembers });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("List staff error:", error);
     return NextResponse.json(
       { error: "Internal server error fetching staff list" },

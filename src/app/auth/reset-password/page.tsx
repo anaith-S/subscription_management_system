@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -11,19 +11,12 @@ function ResetPasswordForm() {
   const router = useRouter();
   const { resetPassword } = useAuth();
 
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(() => searchParams.get("token") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const urlToken = searchParams.get("token");
-    if (urlToken) {
-      setToken(urlToken);
-    }
-  }, [searchParams]);
 
   const hasMinLength = password.length > 8;
   const hasUppercase = /[A-Z]/.test(password);

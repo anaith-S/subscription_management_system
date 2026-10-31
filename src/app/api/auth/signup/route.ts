@@ -78,14 +78,14 @@ export async function POST(req: Request) {
 
     // Set cookie for browser sessions
     response.cookies.set("auth_token", token, {
-      httpOnly: false, // accessible to client auth context
+      httpOnly: false,
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Signup error:", error);
     return NextResponse.json(
       { error: "Internal server error during registration" },

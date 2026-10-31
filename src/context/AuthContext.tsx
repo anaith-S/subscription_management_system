@@ -148,8 +148,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       redirectByRole(data.user.role);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "An unexpected error occurred" };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      return { success: false, error: message };
     }
   };
 
@@ -174,8 +175,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       router.push("/portal");
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "An unexpected error occurred" };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      return { success: false, error: message };
     }
   };
 
@@ -207,8 +209,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         message: data.message,
         resetLink: data.resetLink,
       };
-    } catch (err: any) {
-      return { success: false, error: err.message || "Network error" };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Network error";
+      return { success: false, error: message };
     }
   };
 
@@ -227,8 +230,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       return { success: true, message: data.message };
-    } catch (err: any) {
-      return { success: false, error: err.message || "Network error" };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Network error";
+      return { success: false, error: message };
     }
   };
 

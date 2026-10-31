@@ -3,7 +3,7 @@
 import React from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
-import { LayoutDashboard, TrendingUp, Users, Repeat, Receipt, DollarSign, Clock } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Repeat, Receipt, DollarSign } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -20,7 +20,7 @@ export default function DashboardPage() {
               Brightloop Finance & Operations Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Real-time recurring revenue, subscription lifecycle, and billing KPIs.
+              Welcome back, {user?.name || "Administrator"}. Real-time recurring revenue, subscription lifecycle, and billing KPIs.
             </p>
           </div>
         </div>
