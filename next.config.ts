@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       { source: "/auth/reset-password", destination: "/api/auth/reset-password" },
       { source: "/auth/me", destination: "/api/auth/me" },
       { source: "/auth/staff", destination: "/api/auth/staff" },
+      { source: "/catalog/:path*", destination: "/api/catalog/:path*" },
+      { source: "/api/products/:path*", destination: "/api/catalog/products/:path*" },
+      { source: "/api/products", destination: "/api/catalog/products" },
+      { source: "/api/plans/:path*", destination: "/api/catalog/plans/:path*" },
+      { source: "/api/plans", destination: "/api/catalog/plans" },
+      { source: "/api/taxes/:path*", destination: "/api/catalog/taxes/:path*" },
+      { source: "/api/taxes", destination: "/api/catalog/taxes" },
+      { source: "/api/discounts/:path*", destination: "/api/catalog/discounts/:path*" },
+      { source: "/api/discounts", destination: "/api/catalog/discounts" },
     ];
   },
 };
