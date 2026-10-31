@@ -304,7 +304,7 @@ export default function InvoicesPage() {
                               )}
 
                               {/* Send */}
-                              {inv.status !== "CANCELLED" && (
+                              {(inv.status === "CONFIRMED" || inv.status === "PAID") && (
                                 <button
                                   disabled={actionLoadingId === inv.id}
                                   onClick={() => handleInvoiceAction(inv.id, "send")}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 
 // GET /api/subscriptions/[id]
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     return NextResponse.json({ subscription });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch subscription" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch subscription");
   }
 }

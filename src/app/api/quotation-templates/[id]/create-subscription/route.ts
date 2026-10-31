@@ -1,36 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
 import { createSubscriptionFromTemplate } from "@/lib/subscription-service";
+import { errorResponse, parseOptionalDate } from "@/lib/errors";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) {
-      return NextResponse.json({ error: "Forbidden: Admin or Staff required" }, { status: 403 });
-    }
+    const { error } = await require_role("ADMIN", "STAFF")(req);
+    if (error) return error;
 
     const { id } = await params;
-    const body = await req.json();
-    const { customerId, paymentTerms, discountCode, startDate } = body;
-
-    if (!customerId) {
-      return NextResponse.json({ error: "Customer ID is required" }, { status: 400 });
-    }
+    const { customerId, paymentTerms, discountCode, startDate } = await req.json();
 
     const subscription = await createSubscriptionFromTemplate(id, customerId, {
-      paymentTerms: paymentTerms || "Net 15",
-      discountCode: discountCode || null,
-      startDate: startDate ? new Date(startDate) : new Date(),
+      paymentTerms,
+      discountCode,
+      startDate: parseOptionalDate(startDate, "startDate"),
     });
 
     return NextResponse.json(
-      {
-        message: "Subscription successfully created from template",
-        subscription,
-      },
+      { message: "Subscription successfully created from template", subscription },
       { status: 201 }
     );
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create subscription from template" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to create subscription from template");
   }
 }

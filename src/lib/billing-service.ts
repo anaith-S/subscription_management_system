@@ -1,337 +1,432 @@
 import { prisma } from "@/lib/prisma";
-import { BillingFrequency, DiscountTarget, DiscountType, InvoiceStatus } from "@prisma/client";
+import {
+  BillingFrequency,
+  DiscountTarget,
+  DiscountType,
+  InvoiceStatus,
+  Plan,
+  Prisma,
+  Subscription,
+  SubscriptionStatus,
+} from "@prisma/client";
+import { AppError } from "@/lib/errors";
+import { allocate, fromCents, percentOf, toCents } from "@/lib/money";
+import { addUtcDays, addUtcMonths, endOfUtcDay, startOfUtcDay } from "@/lib/dates";
+import { nextDocumentNumber } from "@/lib/sequence";
+import { paymentTermsToDays } from "@/lib/payment-terms";
 
+type Tx = Prisma.TransactionClient;
+
+/** AppError code used when a billing period already has an invoice. */
+export const INVOICE_ALREADY_EXISTS = "INVOICE_ALREADY_EXISTS";
+
+/** Upper bound on missed periods caught up for one subscription in one run. */
+const MAX_PERIODS_PER_RUN = 400;
+
+/**
+ * Reserves the next invoice number. Kept for existing callers; new code should
+ * call nextDocumentNumber(tx, "INVOICE") inside its own transaction.
+ */
 export async function generateInvoiceNumber(): Promise<string> {
-  const count = await prisma.invoice.count();
-  const nextNumber = count + 1;
-  return `INV-${String(nextNumber).padStart(4, "0")}`;
+  return nextDocumentNumber(prisma, "INVOICE");
+}
+
+/** Due date = invoice date + the number of days in the payment terms. */
+export function calculateDueDate(invoiceDate: Date, paymentTerms: string): Date {
+  return addUtcDays(invoiceDate, paymentTermsToDays(paymentTerms));
 }
 
 /**
- * Calculates due date based on payment terms (e.g. Net 15, Net 30, Immediate)
+ * Next billing date after `currentDate` for the plan's frequency.
+ *
+ * `anchorDate` is the subscription's start date. Monthly and yearly plans keep
+ * billing on that day of the month where possible instead of drifting
+ * (Jan 31 -> Feb 28 -> Mar 31, not Jan 31 -> Mar 3).
  */
-export function calculateDueDate(baseDate: Date, paymentTerms: string): Date {
-  const dueDate = new Date(baseDate);
-  if (paymentTerms.toLowerCase().includes("15")) {
-    dueDate.setDate(dueDate.getDate() + 15);
-  } else if (paymentTerms.toLowerCase().includes("30")) {
-    dueDate.setDate(dueDate.getDate() + 30);
-  } else if (paymentTerms.toLowerCase().includes("7")) {
-    dueDate.setDate(dueDate.getDate() + 7);
-  } else {
-    // Immediate
-    dueDate.setDate(dueDate.getDate() + 1);
-  }
-  return dueDate;
-}
-
-/**
- * Calculates next billing date by advancing by the plan's frequency
- */
-export function advanceBillingDate(currentDate: Date, frequency: BillingFrequency): Date {
-  const nextDate = new Date(currentDate);
+export function advanceBillingDate(
+  currentDate: Date,
+  frequency: BillingFrequency,
+  anchorDate?: Date
+): Date {
+  const anchorDay = (anchorDate ?? currentDate).getUTCDate();
   switch (frequency) {
     case BillingFrequency.DAILY:
-      nextDate.setDate(nextDate.getDate() + 1);
-      break;
+      return addUtcDays(currentDate, 1);
     case BillingFrequency.WEEKLY:
-      nextDate.setDate(nextDate.getDate() + 7);
-      break;
-    case BillingFrequency.MONTHLY:
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      break;
+      return addUtcDays(currentDate, 7);
     case BillingFrequency.YEARLY:
-      nextDate.setFullYear(nextDate.getFullYear() + 1);
-      break;
+      return addUtcMonths(currentDate, 12, anchorDay);
+    case BillingFrequency.MONTHLY:
     default:
-      nextDate.setMonth(nextDate.getMonth() + 1);
+      return addUtcMonths(currentDate, 1, anchorDay);
   }
-  return nextDate;
 }
 
-/**
- * Evaluates and applies discount rule
- */
-export async function evaluateDiscount(
-  discountCode: string | null | undefined,
-  subtotal: number,
-  totalQuantity: number,
-  lineItems: { productId: string; amount: number; quantity: number }[]
-): Promise<{ discountAmount: number; discountId: string | null; ruleCode: string | null }> {
-  if (!discountCode || discountCode.trim() === "") {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
-  }
+// ---------------------------------------------------------------------------
+// Discounts
+// ---------------------------------------------------------------------------
 
-  const rule = await prisma.discountRule.findUnique({
+interface PricedLine {
+  productId: string;
+  quantity: number;
+  amountCents: number;
+}
+
+interface DiscountOutcome {
+  ruleId: string | null;
+  totalCents: number;
+  /** Discount allocated to each line, same order as the input lines. */
+  perLineCents: number[];
+}
+
+const NO_DISCOUNT = (lines: PricedLine[]): DiscountOutcome => ({
+  ruleId: null,
+  totalCents: 0,
+  perLineCents: lines.map(() => 0),
+});
+
+/**
+ * Works out and claims the discount for one invoice, inside the invoice's
+ * transaction.
+ *
+ * A code counts as one use per subscription, the first time it is applied, so
+ * a monthly subscriber renewing doesn't use up the code's usage limit. The
+ * claim is a conditional increment, so two invoices at once can't both take
+ * the last use.
+ */
+async function applyDiscount(
+  tx: Tx,
+  subscriptionId: string,
+  discountCode: string | null,
+  lines: PricedLine[]
+): Promise<DiscountOutcome> {
+  if (!discountCode?.trim()) return NO_DISCOUNT(lines);
+
+  const rule = await tx.discountRule.findUnique({
     where: { code: discountCode.trim().toUpperCase() },
   });
-
-  if (!rule) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
-  }
+  if (!rule) return NO_DISCOUNT(lines);
 
   const now = new Date();
-
-  // Validate dates
-  if (rule.startDate && now < rule.startDate) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
-  }
-  if (rule.endDate && now > rule.endDate) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
+  if ((rule.startDate && now < rule.startDate) || (rule.endDate && now > rule.endDate)) {
+    return NO_DISCOUNT(lines);
   }
 
-  // Validate usage limit
-  if (rule.usageLimit && rule.timesUsed >= rule.usageLimit) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
+  const subtotalCents = lines.reduce((sum, l) => sum + l.amountCents, 0);
+  const totalQuantity = lines.reduce((sum, l) => sum + l.quantity, 0);
+
+  if (rule.minQuantity && totalQuantity < rule.minQuantity) return NO_DISCOUNT(lines);
+  if (rule.minPurchaseAmount && subtotalCents < toCents(rule.minPurchaseAmount)) {
+    return NO_DISCOUNT(lines);
   }
 
-  // Validate minimum quantity
-  if (rule.minQuantity && totalQuantity < rule.minQuantity) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
+  const eligibleWeights = lines.map((l) =>
+    rule.targetType === DiscountTarget.SPECIFIC_PRODUCT && rule.targetProductId
+      ? l.productId === rule.targetProductId
+        ? l.amountCents
+        : 0
+      : l.amountCents
+  );
+  const eligibleCents = eligibleWeights.reduce((sum, w) => sum + w, 0);
+  if (eligibleCents <= 0) return NO_DISCOUNT(lines);
+
+  const totalCents =
+    rule.type === DiscountType.PERCENTAGE
+      ? Math.min(percentOf(eligibleCents, rule.value), eligibleCents)
+      : Math.min(toCents(rule.value), eligibleCents);
+  if (totalCents <= 0) return NO_DISCOUNT(lines);
+
+  // Count a use only the first time this subscription gets the discount.
+  const alreadyApplied =
+    (await tx.invoice.count({ where: { subscriptionId, discountAmount: { gt: 0 } } })) > 0;
+
+  if (!alreadyApplied) {
+    const claimed = await tx.discountRule.updateMany({
+      where: {
+        id: rule.id,
+        ...(rule.usageLimit != null ? { timesUsed: { lt: rule.usageLimit } } : {}),
+      },
+      data: { timesUsed: { increment: 1 } },
+    });
+    if (claimed.count === 0) return NO_DISCOUNT(lines); // usage limit reached
   }
 
-  // Validate minimum purchase amount
-  if (rule.minPurchaseAmount && subtotal < rule.minPurchaseAmount) {
-    return { discountAmount: 0, discountId: null, ruleCode: null };
-  }
+  return { ruleId: rule.id, totalCents, perLineCents: allocate(totalCents, eligibleWeights) };
+}
 
-  // Calculate discount value
-  let eligibleSubtotal = subtotal;
+// ---------------------------------------------------------------------------
+// Invoicing
+// ---------------------------------------------------------------------------
 
-  if (rule.targetType === DiscountTarget.SPECIFIC_PRODUCT && rule.targetProductId) {
-    // Only apply to matching product lines
-    const matchingLines = lineItems.filter((l) => l.productId === rule.targetProductId);
-    eligibleSubtotal = matchingLines.reduce((sum, l) => sum + l.amount, 0);
-    if (eligibleSubtotal <= 0) {
-      return { discountAmount: 0, discountId: null, ruleCode: null };
-    }
-  }
+const INVOICE_INCLUDE = {
+  customer: true,
+  lines: { include: { product: true } },
+  subscription: { include: { plan: true } },
+} satisfies Prisma.InvoiceInclude;
 
-  let calculatedDiscount = 0;
-  if (rule.type === DiscountType.PERCENTAGE) {
-    calculatedDiscount = (eligibleSubtotal * rule.value) / 100;
-  } else {
-    // Fixed amount
-    calculatedDiscount = Math.min(rule.value, eligibleSubtotal);
-  }
+/**
+ * What to change on the subscription once the period starting at
+ * `periodStart` is billed. The schedule only moves on when the billed period
+ * is the scheduled one; an ad-hoc invoice for another period leaves it alone.
+ */
+function scheduleUpdate(
+  subscription: Subscription & { plan: Plan },
+  periodStart: Date
+): Prisma.SubscriptionUpdateInput {
+  const scheduledStart = startOfUtcDay(subscription.nextBillingDate);
+  if (periodStart.getTime() !== scheduledStart.getTime()) return {};
+
+  const nextBillingDate = advanceBillingDate(
+    periodStart,
+    subscription.plan.frequency,
+    startOfUtcDay(subscription.startDate)
+  );
+  const pastExpiry = subscription.expiryDate != null && nextBillingDate > subscription.expiryDate;
 
   return {
-    discountAmount: Math.round(calculatedDiscount * 100) / 100,
-    discountId: rule.id,
-    ruleCode: rule.code,
+    nextBillingDate,
+    ...(subscription.plan.autoClose && pastExpiry ? { status: SubscriptionStatus.CLOSED } : {}),
   };
 }
 
 /**
- * Creates an invoice from an active subscription for a specific billing period.
- * Enforces the unique constraint on (subscriptionId, periodStart) so nothing is billed twice.
+ * Bills one period of a subscription. Runs entirely inside `tx`, so the
+ * invoice, the discount usage and the schedule update are saved together or
+ * not at all.
  */
-export async function createInvoiceFromSubscription(
+async function billPeriodInTx(
+  tx: Tx,
   subscriptionId: string,
-  periodStart: Date,
-  options?: { customNotes?: string }
+  requestedPeriodStart: Date | undefined,
+  options: { customNotes?: string } = {}
 ) {
-  // Normalize periodStart date to midnight UTC to prevent subtle millisecond mismatches
-  const normalizedPeriodStart = new Date(periodStart);
-  normalizedPeriodStart.setHours(0, 0, 0, 0);
-
-  // Check if invoice already exists for this subscription and period
-  const existingInvoice = await prisma.invoice.findFirst({
-    where: {
-      subscriptionId,
-      periodStart: normalizedPeriodStart,
-    },
+  const subscription = await tx.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: { plan: true, lines: { include: { product: true, variant: true } } },
   });
+  if (!subscription) throw new AppError("Subscription not found", 404);
 
-  if (existingInvoice) {
-    throw new Error(
-      `Invoice already generated for subscription ${subscriptionId} for period starting ${normalizedPeriodStart.toISOString().split("T")[0]}`
+  if (subscription.status !== SubscriptionStatus.ACTIVE) {
+    throw new AppError(
+      `Cannot bill subscription in '${subscription.status}' status. Must be ACTIVE.`,
+      409
+    );
+  }
+  if (subscription.lines.length === 0) {
+    throw new AppError("Subscription has no product lines to bill", 409);
+  }
+
+  // Default to the next scheduled period, so a manual "create invoice" stays
+  // in step with the billing run instead of overlapping it.
+  const periodStart = startOfUtcDay(requestedPeriodStart ?? subscription.nextBillingDate);
+
+  const existing = await tx.invoice.findFirst({ where: { subscriptionId, periodStart } });
+  if (existing) {
+    throw new AppError(
+      `Invoice ${existing.invoiceNumber} already covers the period starting ${periodStart
+        .toISOString()
+        .slice(0, 10)}`,
+      409,
+      INVOICE_ALREADY_EXISTS
     );
   }
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
-    include: {
-      customer: true,
-      plan: true,
-      lines: {
-        include: {
-          product: true,
-          variant: true,
-        },
-      },
-    },
-  });
+  const priced: PricedLine[] = subscription.lines.map((line) => ({
+    productId: line.productId,
+    quantity: line.quantity,
+    amountCents: toCents(line.unitPrice) * line.quantity,
+  }));
 
-  if (!subscription) {
-    throw new Error("Subscription not found");
-  }
+  const discount = await applyDiscount(tx, subscription.id, subscription.discountCode, priced);
 
-  if (subscription.status !== "ACTIVE") {
-    throw new Error(`Cannot bill subscription in '${subscription.status}' status. Must be ACTIVE.`);
-  }
-
-  // Calculate line items, taxes and subtotal
-  let subtotal = 0;
-  let totalTax = 0;
-  let totalQuantity = 0;
-
-  const invoiceLinesData = subscription.lines.map((line) => {
-    const lineSubtotal = line.unitPrice * line.quantity;
-    const lineTax = (lineSubtotal * line.taxRate) / 100;
-
-    subtotal += lineSubtotal;
-    totalTax += lineTax;
-    totalQuantity += line.quantity;
+  // Tax is charged on what the customer actually pays: line amount minus its
+  // share of the discount.
+  let subtotalCents = 0;
+  let taxCents = 0;
+  const invoiceLines = subscription.lines.map((line, i) => {
+    const amountCents = priced[i].amountCents;
+    subtotalCents += amountCents;
+    taxCents += percentOf(amountCents - discount.perLineCents[i], line.taxRate);
 
     const variantLabel = line.variant ? ` (${line.variant.name})` : "";
-    const description = `${line.product.name}${variantLabel} - ${subscription.plan.name}`;
-
     return {
       productId: line.productId,
-      description,
+      description: `${line.product.name}${variantLabel} - ${subscription.plan.name}`,
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       taxRate: line.taxRate,
-      amount: lineSubtotal,
+      amount: fromCents(amountCents),
     };
   });
+  const totalCents = subtotalCents - discount.totalCents + taxCents;
 
-  // Calculate discounts
-  const discountResult = await evaluateDiscount(
-    subscription.discountCode,
-    subtotal,
-    totalQuantity,
-    subscription.lines.map((l) => ({
-      productId: l.productId,
-      amount: l.unitPrice * l.quantity,
-      quantity: l.quantity,
-    }))
-  );
+  const invoiceDate = new Date();
+  const invoice = await tx.invoice.create({
+    data: {
+      invoiceNumber: await nextDocumentNumber(tx, "INVOICE"),
+      customerId: subscription.customerId,
+      subscriptionId: subscription.id,
+      periodStart,
+      periodEnd: advanceBillingDate(
+        periodStart,
+        subscription.plan.frequency,
+        startOfUtcDay(subscription.startDate)
+      ),
+      status: InvoiceStatus.DRAFT,
+      invoiceDate,
+      dueDate: calculateDueDate(invoiceDate, subscription.paymentTerms),
+      subtotal: fromCents(subtotalCents),
+      taxAmount: fromCents(taxCents),
+      discountAmount: fromCents(discount.totalCents),
+      totalAmount: fromCents(totalCents),
+      notes:
+        options.customNotes ||
+        `Automated billing for ${subscription.subscriptionNumber} (${subscription.plan.name}). Terms: ${subscription.paymentTerms}.`,
+      lines: { create: invoiceLines },
+    },
+    include: INVOICE_INCLUDE,
+  });
 
-  const discountAmount = discountResult.discountAmount;
-  const totalAmount = Math.max(0, subtotal + totalTax - discountAmount);
-  const invoiceNumber = await generateInvoiceNumber();
-  const dueDate = calculateDueDate(normalizedPeriodStart, subscription.paymentTerms);
-
-  // Execute invoice creation and discount usage increment in a transaction
-  const invoice = await prisma.$transaction(async (tx) => {
-    const createdInvoice = await tx.invoice.create({
-      data: {
-        invoiceNumber,
-        customerId: subscription.customerId,
-        subscriptionId: subscription.id,
-        periodStart: normalizedPeriodStart,
-        periodEnd: advanceBillingDate(normalizedPeriodStart, subscription.plan.frequency),
-        status: InvoiceStatus.DRAFT,
-        invoiceDate: new Date(),
-        dueDate,
-        subtotal: Math.round(subtotal * 100) / 100,
-        taxAmount: Math.round(totalTax * 100) / 100,
-        discountAmount: Math.round(discountAmount * 100) / 100,
-        totalAmount: Math.round(totalAmount * 100) / 100,
-        notes:
-          options?.customNotes ||
-          `Automated billing for ${subscription.subscriptionNumber} (${subscription.plan.name}). Terms: ${subscription.paymentTerms}.`,
-        lines: {
-          create: invoiceLinesData,
-        },
-      },
-      include: {
-        customer: true,
-        lines: { include: { product: true } },
-        subscription: { include: { plan: true } },
-      },
-    });
-
-    // Increment discount usage if applied
-    if (discountResult.discountId) {
-      await tx.discountRule.update({
-        where: { id: discountResult.discountId },
-        data: { timesUsed: { increment: 1 } },
-      });
-    }
-
-    // Update subscription's lastBilledDate
-    await tx.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        lastBilledDate: new Date(),
-      },
-    });
-
-    return createdInvoice;
+  await tx.subscription.update({
+    where: { id: subscription.id },
+    data: { lastBilledDate: invoiceDate, ...scheduleUpdate(subscription, periodStart) },
   });
 
   return invoice;
 }
 
-/**
- * Billing Run engine:
- * Finds all active subscriptions whose nextBillingDate is due (<= today).
- * Generates their invoices and advances nextBillingDate.
- */
-export async function executeBillingRun() {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999); // Due through end of today
+function isDuplicatePeriodError(error: unknown): boolean {
+  return (
+    (error instanceof AppError && error.code === INVOICE_ALREADY_EXISTS) ||
+    // Two requests raced past the existence check; the unique index caught it.
+    (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+  );
+}
 
-  // Find due active subscriptions
+/**
+ * Creates the invoice for one billing period of an ACTIVE subscription.
+ *
+ * `periodStart` defaults to the subscription's next billing date, and billing
+ * that period moves the schedule on. The unique (subscriptionId, periodStart)
+ * index guarantees a period is never billed twice.
+ */
+export async function createInvoiceFromSubscription(
+  subscriptionId: string,
+  periodStart?: Date,
+  options?: { customNotes?: string }
+) {
+  try {
+    return await prisma.$transaction((tx) =>
+      billPeriodInTx(tx, subscriptionId, periodStart, options)
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new AppError("An invoice for this period was just created", 409, INVOICE_ALREADY_EXISTS);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Billing run: bills every ACTIVE subscription whose next billing date is
+ * today or earlier, catching up any periods that were missed.
+ *
+ * Each period is its own transaction (invoice + schedule move together), so a
+ * crash part-way through can never leave a subscription stuck with an
+ * invoice but an old nextBillingDate. If a period already has an invoice
+ * (e.g. one created by hand), the schedule is moved past it and it's counted
+ * as skipped.
+ */
+export async function executeBillingRun(now: Date = new Date()) {
+  const cutoff = endOfUtcDay(now);
+
   const dueSubscriptions = await prisma.subscription.findMany({
-    where: {
-      status: "ACTIVE",
-      nextBillingDate: { lte: today },
-    },
-    include: {
-      plan: true,
-      customer: true,
-    },
+    where: { status: SubscriptionStatus.ACTIVE, nextBillingDate: { lte: cutoff } },
+    select: { id: true, subscriptionNumber: true, customer: { select: { name: true } } },
+    orderBy: { nextBillingDate: "asc" },
   });
 
   const results = {
     totalEvaluated: dueSubscriptions.length,
     invoicesCreated: 0,
     skipped: 0,
-    invoices: [] as any[],
+    invoices: [] as {
+      invoiceId: string;
+      invoiceNumber: string;
+      customerName: string;
+      amount: number;
+      subscriptionNumber: string;
+    }[],
     errors: [] as { subscriptionNumber: string; error: string }[],
   };
 
   for (const sub of dueSubscriptions) {
-    try {
-      const periodStart = sub.nextBillingDate;
-      const invoice = await createInvoiceFromSubscription(sub.id, periodStart);
-
-      // Advance next billing date
-      const advancedBillingDate = advanceBillingDate(sub.nextBillingDate, sub.plan.frequency);
-
-      // Check if subscription has expired and should auto-close
-      const shouldAutoClose =
-        sub.plan.autoClose && sub.expiryDate && advancedBillingDate > sub.expiryDate;
-
-      await prisma.subscription.update({
-        where: { id: sub.id },
-        data: {
-          nextBillingDate: advancedBillingDate,
-          status: shouldAutoClose ? "CLOSED" : sub.status,
-        },
-      });
-
-      results.invoicesCreated += 1;
-      results.invoices.push({
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        customerName: sub.customer.name,
-        amount: invoice.totalAmount,
-        subscriptionNumber: sub.subscriptionNumber,
-      });
-    } catch (err: any) {
-      // If error is unique constraint duplicate, note as skipped
-      if (err.message && err.message.includes("already generated")) {
-        results.skipped += 1;
-      } else {
+    for (let period = 0; ; period++) {
+      if (period >= MAX_PERIODS_PER_RUN) {
         results.errors.push({
           subscriptionNumber: sub.subscriptionNumber,
-          error: err.message || "Failed to generate invoice",
+          error: `Stopped after ${MAX_PERIODS_PER_RUN} periods; run billing again to continue catching up`,
         });
+        break;
+      }
+
+      try {
+        const outcome = await prisma.$transaction(async (tx) => {
+          // Re-read inside the transaction: another run may have moved it on.
+          const current = await tx.subscription.findUnique({
+            where: { id: sub.id },
+            include: { plan: true },
+          });
+          if (
+            !current ||
+            current.status !== SubscriptionStatus.ACTIVE ||
+            current.nextBillingDate > cutoff
+          ) {
+            return { kind: "done" as const };
+          }
+
+          try {
+            const invoice = await billPeriodInTx(tx, sub.id, current.nextBillingDate);
+            return { kind: "billed" as const, invoice };
+          } catch (error) {
+            if (!(error instanceof AppError && error.code === INVOICE_ALREADY_EXISTS)) throw error;
+            // Already invoiced: move the schedule past this period.
+            await tx.subscription.update({
+              where: { id: sub.id },
+              data: scheduleUpdate(current, startOfUtcDay(current.nextBillingDate)),
+            });
+            return { kind: "skipped" as const };
+          }
+        });
+
+        if (outcome.kind === "done") break;
+        if (outcome.kind === "skipped") {
+          results.skipped += 1;
+          continue;
+        }
+
+        results.invoicesCreated += 1;
+        results.invoices.push({
+          invoiceId: outcome.invoice.id,
+          invoiceNumber: outcome.invoice.invoiceNumber,
+          customerName: sub.customer.name,
+          amount: outcome.invoice.totalAmount,
+          subscriptionNumber: sub.subscriptionNumber,
+        });
+      } catch (error) {
+        if (isDuplicatePeriodError(error)) {
+          // A concurrent run billed this period first; it will carry on from here.
+          results.skipped += 1;
+        } else {
+          if (!(error instanceof AppError)) {
+            console.error(`Billing run failed for ${sub.subscriptionNumber}:`, error);
+          }
+          results.errors.push({
+            subscriptionNumber: sub.subscriptionNumber,
+            error: error instanceof AppError ? error.message : "Failed to generate invoice",
+          });
+        }
+        break;
       }
     }
   }

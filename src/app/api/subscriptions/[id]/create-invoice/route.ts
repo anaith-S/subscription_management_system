@@ -1,36 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
 import { createInvoiceFromSubscription } from "@/lib/billing-service";
+import { errorResponse, parseOptionalDate } from "@/lib/errors";
 
+// POST /api/subscriptions/[id]/create-invoice
+// Bills the subscription's next scheduled period, or `periodStart` if given.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) {
-      return NextResponse.json({ error: "Forbidden: Admin or Staff required" }, { status: 403 });
-    }
+    const { error } = await require_role("ADMIN", "STAFF")(req);
+    if (error) return error;
 
     const { id } = await params;
-    let periodStart = new Date();
 
-    try {
-      const body = await req.json();
-      if (body?.periodStart) {
-        periodStart = new Date(body.periodStart);
-      }
-    } catch {
-      // Body is optional
-    }
+    // Body is optional
+    const raw = await req.text();
+    const body = raw.trim() ? JSON.parse(raw) : {};
+    const periodStart = parseOptionalDate(body?.periodStart, "periodStart");
 
     const invoice = await createInvoiceFromSubscription(id, periodStart);
 
-    return NextResponse.json({
-      message: "Invoice generated successfully from subscription",
-      invoice,
-    }, { status: 201 });
-  } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || "Failed to generate invoice from subscription" },
-      { status: 400 }
+      { message: "Invoice generated successfully from subscription", invoice },
+      { status: 201 }
     );
+  } catch (error) {
+    return errorResponse(error, "Failed to generate invoice from subscription");
   }
 }

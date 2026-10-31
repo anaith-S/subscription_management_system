@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 
 // GET /api/quotation-templates/[id]
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,8 +29,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     return NextResponse.json({ template });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch template" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch template");
   }
 }
 
@@ -75,8 +76,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json({ template: updated });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to update template" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to update template");
   }
 }
 
@@ -94,7 +95,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     });
 
     return NextResponse.json({ success: true, message: "Template deleted" });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to delete template" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to delete template");
   }
 }

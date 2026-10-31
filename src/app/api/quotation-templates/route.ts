@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/deps";
+import { errorResponse } from "@/lib/errors";
 
 // GET /api/quotation-templates - List templates with lines and plan
 export async function GET(req: NextRequest) {
@@ -25,8 +26,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ templates });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch templates" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch templates");
   }
 }
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ template }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create template" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to create template");
   }
 }
