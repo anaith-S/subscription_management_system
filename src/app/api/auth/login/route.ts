@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, signToken } from "@/lib/auth";
+import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
 export async function POST(req: Request) {
   try {
@@ -67,13 +68,8 @@ export async function POST(req: Request) {
       user: safeUser,
     });
 
-    // Set auth cookie
-    response.cookies.set("auth_token", token, {
-      httpOnly: false,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-      sameSite: "lax",
-    });
+    // Set httpOnly session cookie
+    response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
 
     return response;
   } catch (error: any) {

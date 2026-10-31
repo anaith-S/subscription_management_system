@@ -18,8 +18,8 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string; resetLink?: string }>;
+  logout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   resetPassword: (token: string, password: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
@@ -32,43 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Helper to get cookie value
-  const getCookie = (name: string): string | null => {
-    if (typeof document === "undefined") return null;
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
-    return null;
-  };
-
-  // Helper to set cookie
-  const setAuthCookie = (tokenVal: string) => {
-    if (typeof document !== "undefined") {
-      document.cookie = `auth_token=${tokenVal}; path=/; max-age=604800; SameSite=Lax`;
-    }
-  };
-
-  // Helper to remove cookie
-  const removeAuthCookie = () => {
-    if (typeof document !== "undefined") {
-      document.cookie = "auth_token=; path=/; max-age=0; SameSite=Lax";
-    }
-  };
-
-  // Authenticated fetch helper that automatically attaches the token
+  // Authenticated fetch helper.
+  // The session lives in an httpOnly cookie, so same-origin requests are
+  // already authenticated; the in-memory token is only sent along when this
+  // browser tab logged in during the current page load.
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}): Promise<Response> => {
-      const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
       const headers = new Headers(options.headers || {});
 
-      if (activeToken) {
-        headers.set("Authorization", `Bearer ${activeToken}`);
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
       }
       headers.set("Content-Type", "application/json");
 
       return fetch(url, {
         ...options,
         headers,
+        credentials: "same-origin",
       });
     },
     [token]
@@ -78,28 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const storedToken =
-          localStorage.getItem("auth_token") || getCookie("auth_token");
+        // The httpOnly cookie is sent automatically; ask the server who we are.
+        const res = await fetch("/api/auth/me", { credentials: "same-origin" });
 
-        if (storedToken) {
-          setToken(storedToken);
-          // Verify current user with /api/auth/me
-          const res = await fetch("/api/auth/me", {
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-            },
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            setUser(data.user);
-          } else {
-            // Token is invalid/expired
-            localStorage.removeItem("auth_token");
-            removeAuthCookie();
-            setUser(null);
-            setToken(null);
-          }
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          setUser(null);
+          setToken(null);
         }
       } catch (err) {
         console.error("Auth initialization error:", err);
@@ -143,8 +110,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setToken(data.token);
       setUser(data.user);
-      localStorage.setItem("auth_token", data.token);
-      setAuthCookie(data.token);
 
       redirectByRole(data.user.role);
       return { success: true };
@@ -169,8 +134,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setToken(data.token);
       setUser(data.user);
-      localStorage.setItem("auth_token", data.token);
-      setAuthCookie(data.token);
 
       router.push("/portal");
       return { success: true };
@@ -179,12 +142,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout
-  const logout = () => {
+  // Logout: the cookie is httpOnly, so only the server can clear it.
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
     setToken(null);
     setUser(null);
-    localStorage.removeItem("auth_token");
-    removeAuthCookie();
     router.push("/auth/login");
   };
 
@@ -205,7 +174,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {
         success: true,
         message: data.message,
-        resetLink: data.resetLink,
       };
     } catch (err: any) {
       return { success: false, error: err.message || "Network error" };

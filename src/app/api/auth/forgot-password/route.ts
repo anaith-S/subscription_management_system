@@ -63,10 +63,12 @@ export async function POST(req: Request) {
     console.log("Expires in: 1 hour");
     console.log("=======================================================\n");
 
+    // Never return the token to the caller: anyone could request a reset for
+    // somebody else's address and take over the account. The link is only
+    // written to the server console (simulated email) for local demos.
     return NextResponse.json({
-      message: "Password reset link generated and sent to console.",
-      resetToken: token,
-      resetLink,
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
     });
   } catch (error: any) {
     console.error("Forgot password error:", error);
