@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
 import { executeBillingRun } from "@/lib/billing-service";
+import { errorResponse } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user || (user.role !== "ADMIN" && user.role !== "STAFF")) {
-      return NextResponse.json({ error: "Forbidden: Admin or Staff required to execute billing run" }, { status: 403 });
-    }
+    const { error } = await require_role("ADMIN", "STAFF")(req);
+    if (error) return error;
 
     const runResult = await executeBillingRun();
 
     return NextResponse.json({
-      message: `Billing run completed. Evaluated: ${runResult.totalEvaluated}, Generated: ${runResult.invoicesCreated}, Skipped: ${runResult.skipped}`,
+      message: `Billing run completed. Evaluated: ${runResult.totalEvaluated}, Generated: ${runResult.invoicesCreated}, Skipped: ${runResult.skipped}, Errors: ${runResult.errors.length}`,
       ...runResult,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to execute billing run" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to execute billing run");
   }
 }

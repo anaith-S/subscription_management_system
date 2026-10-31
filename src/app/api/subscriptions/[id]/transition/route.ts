@@ -1,26 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/deps";
+import { require_role } from "@/lib/deps";
 import { transitionSubscription } from "@/lib/subscription-service";
+import { AppError, errorResponse } from "@/lib/errors";
 import { SubscriptionStatus } from "@prisma/client";
 
+// POST /api/subscriptions/[id]/transition - Admin / Staff only
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { user, error } = await require_role("ADMIN", "STAFF")(req);
+    if (error || !user) return error;
 
     const { id } = await params;
-    const body = await req.json();
-    const { targetStatus } = body;
+    const { targetStatus } = await req.json();
 
-    if (!targetStatus) {
-      return NextResponse.json({ error: "targetStatus is required" }, { status: 400 });
+    if (typeof targetStatus !== "string" || !targetStatus) {
+      throw new AppError("targetStatus is required");
     }
 
     const normalizedStatus = targetStatus.toUpperCase() as SubscriptionStatus;
     if (!Object.values(SubscriptionStatus).includes(normalizedStatus)) {
-      return NextResponse.json({ error: `Invalid status: ${targetStatus}` }, { status: 400 });
+      throw new AppError(`Invalid status: ${targetStatus}`);
     }
 
     const updated = await transitionSubscription(id, normalizedStatus, user);
@@ -29,10 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       message: `Subscription transitioned to ${normalizedStatus} successfully`,
       subscription: updated,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to transition subscription status" },
-      { status: 400 }
-    );
+  } catch (error) {
+    return errorResponse(error, "Failed to transition subscription status");
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, customerScopingHelper } from "@/lib/deps";
+import { AppError, errorResponse } from "@/lib/errors";
 import { InvoiceStatus } from "@prisma/client";
 
 // GET /api/invoices - List invoices filterable by status and customer
@@ -12,11 +13,14 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const statusParam = searchParams.get("status") as InvoiceStatus | null;
+    const statusParam = searchParams.get("status");
     const customerIdParam = searchParams.get("customerId");
 
-    let whereFilter: any = {};
+    let whereFilter: Record<string, unknown> = {};
     if (statusParam) {
+      if (!Object.values(InvoiceStatus).includes(statusParam as InvoiceStatus)) {
+        throw new AppError(`Invalid status filter: ${statusParam}`);
+      }
       whereFilter.status = statusParam;
     }
     if (customerIdParam && user.role !== "CUSTOMER") {
@@ -25,6 +29,7 @@ export async function GET(req: NextRequest) {
 
     // Apply customer scoping: Customers can only view their own invoices
     whereFilter = customerScopingHelper(user, whereFilter);
+    delete whereFilter.customer_id; // snake_case alias isn't a Prisma field
 
     const invoices = await prisma.invoice.findMany({
       where: whereFilter,
@@ -42,7 +47,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ invoices });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch invoices" }, { status: 500 });
+  } catch (error) {
+    return errorResponse(error, "Failed to fetch invoices");
   }
 }

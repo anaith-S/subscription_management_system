@@ -1,88 +1,124 @@
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, PaymentMethod } from "@prisma/client";
+import { AppError } from "@/lib/errors";
+import { fromCents, toCents } from "@/lib/money";
 
 /**
- * Handles invoice state transitions: confirm, cancel, send, pay.
+ * Invoice lifecycle. Each action lists the statuses it may start from:
+ *
+ *   DRAFT --confirm--> CONFIRMED --pay (in full)--> PAID
+ *     |                    |
+ *     +------cancel--------+--> CANCELLED
+ *
+ * `send` (email the invoice / receipt) is allowed once confirmed and doesn't
+ * change the status. Partial payments keep the invoice CONFIRMED until the
+ * balance reaches zero.
  */
+const ALLOWED_FROM = {
+  confirm: [InvoiceStatus.DRAFT],
+  send: [InvoiceStatus.CONFIRMED, InvoiceStatus.PAID],
+  pay: [InvoiceStatus.CONFIRMED],
+  cancel: [InvoiceStatus.DRAFT, InvoiceStatus.CONFIRMED],
+} as const satisfies Record<string, readonly InvoiceStatus[]>;
+
+export type InvoiceAction = keyof typeof ALLOWED_FROM;
+
+export const INVOICE_ACTIONS = Object.keys(ALLOWED_FROM) as InvoiceAction[];
+
+export function isInvoiceAction(value: unknown): value is InvoiceAction {
+  return typeof value === "string" && value in ALLOWED_FROM;
+}
+
+const INVOICE_RESULT_INCLUDE = { customer: true, lines: true, payments: true } as const;
+
 export async function transitionInvoice(
   invoiceId: string,
-  action: "confirm" | "cancel" | "send" | "pay",
+  action: InvoiceAction,
   options?: {
-    paymentMethod?: PaymentMethod;
+    paymentMethod?: PaymentMethod | string;
     paymentAmount?: number;
     paymentNote?: string;
   }
 ) {
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
-    include: { customer: true, payments: true },
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    const invoice = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { payments: true },
+    });
+    if (!invoice) throw new AppError("Invoice not found", 404);
 
-  if (!invoice) {
-    throw new Error("Invoice not found");
-  }
-
-  switch (action) {
-    case "confirm": {
-      if (invoice.status !== InvoiceStatus.DRAFT) {
-        throw new Error(`Only DRAFT invoices can be confirmed. Current status: ${invoice.status}`);
-      }
-      return await prisma.invoice.update({
-        where: { id: invoiceId },
-        data: { status: InvoiceStatus.CONFIRMED },
-        include: { customer: true, lines: true, payments: true },
-      });
-    }
-
-    case "cancel": {
-      if (invoice.status === InvoiceStatus.PAID) {
-        throw new Error("Cannot cancel an already PAID invoice.");
-      }
-      return await prisma.invoice.update({
-        where: { id: invoiceId },
-        data: { status: InvoiceStatus.CANCELLED },
-        include: { customer: true, lines: true, payments: true },
-      });
-    }
-
-    case "send": {
-      // Record sent timestamp and simulation log
-      const sentInvoice = await prisma.invoice.update({
-        where: { id: invoiceId },
-        data: {
-          sentAt: new Date(),
-        },
-        include: { customer: true, lines: true, payments: true },
-      });
-
-      console.log(
-        `✉️ [INVOICE SENT] Invoice ${sentInvoice.invoiceNumber} delivered to ${sentInvoice.customer.email} (Total: $${sentInvoice.totalAmount})`
+    const allowed: readonly InvoiceStatus[] = ALLOWED_FROM[action];
+    if (!allowed.includes(invoice.status)) {
+      throw new AppError(
+        `Cannot ${action} an invoice that is ${invoice.status}. Allowed from: ${allowed.join(", ")}`,
+        409
       );
-
-      return sentInvoice;
     }
 
-    case "pay": {
-      if (invoice.status === InvoiceStatus.CANCELLED) {
-        throw new Error("Cannot pay a CANCELLED invoice.");
-      }
+    const paidCents = invoice.payments.reduce((sum, p) => sum + toCents(p.amount), 0);
 
-      const paymentAmount = options?.paymentAmount ?? invoice.totalAmount;
-      const paymentMethod = options?.paymentMethod ?? PaymentMethod.BANK_TRANSFER;
-      const paymentNote = options?.paymentNote ?? "Direct settlement";
+    switch (action) {
+      case "confirm":
+        return tx.invoice.update({
+          where: { id: invoiceId },
+          data: { status: InvoiceStatus.CONFIRMED },
+          include: INVOICE_RESULT_INCLUDE,
+        });
 
-      return await prisma.$transaction(async (tx) => {
-        // Record payment
+      case "cancel":
+        if (paidCents > 0) {
+          throw new AppError(
+            "This invoice has payments recorded. Refund them before cancelling it.",
+            409
+          );
+        }
+        return tx.invoice.update({
+          where: { id: invoiceId },
+          data: { status: InvoiceStatus.CANCELLED },
+          include: INVOICE_RESULT_INCLUDE,
+        });
+
+      case "send":
+        return tx.invoice.update({
+          where: { id: invoiceId },
+          data: { sentAt: new Date() },
+          include: INVOICE_RESULT_INCLUDE,
+        });
+
+      case "pay": {
+        const balanceCents = toCents(invoice.totalAmount) - paidCents;
+        const amountCents =
+          options?.paymentAmount === undefined ? balanceCents : toCents(options.paymentAmount);
+
+        if (!Number.isFinite(amountCents) || amountCents <= 0) {
+          throw new AppError("Payment amount must be greater than zero");
+        }
+        if (amountCents > balanceCents) {
+          throw new AppError(
+            `Payment of ${fromCents(amountCents).toFixed(2)} is more than the balance due of ${fromCents(
+              balanceCents
+            ).toFixed(2)}`
+          );
+        }
+
+        const method = options?.paymentMethod ?? PaymentMethod.BANK_TRANSFER;
+        if (!Object.values(PaymentMethod).includes(method as PaymentMethod)) {
+          throw new AppError(
+            `Invalid payment method. Use one of: ${Object.values(PaymentMethod).join(", ")}`
+          );
+        }
+
         await tx.payment.create({
           data: {
             invoiceId,
-            method: paymentMethod,
-            amount: paymentAmount,
-            note: paymentNote,
+            method: method as PaymentMethod,
+            amount: fromCents(amountCents),
+            note: options?.paymentNote || "Direct settlement",
             paymentDate: new Date(),
           },
         });
 
+<<<<<<< HEAD
         // Compute total payments using SQL aggregate
         const paymentSumAgg = await tx.payment.aggregate({
           where: { invoiceId },
@@ -100,13 +136,23 @@ export async function transitionInvoice(
             status: newStatus,
           },
           include: { customer: true, lines: true, payments: true },
+=======
+        const fullyPaid = paidCents + amountCents >= toCents(invoice.totalAmount);
+        return tx.invoice.update({
+          where: { id: invoiceId },
+          data: { status: fullyPaid ? InvoiceStatus.PAID : InvoiceStatus.CONFIRMED },
+          include: INVOICE_RESULT_INCLUDE,
+>>>>>>> 904d2ec375d6a3500b2b79c0196455cd5a68ab46
         });
-
-        return updatedInvoice;
-      });
+      }
     }
+  });
 
-    default:
-      throw new Error(`Unsupported invoice action: ${action}`);
+  if (action === "send") {
+    console.log(
+      `✉️ [INVOICE SENT] Invoice ${result.invoiceNumber} delivered to ${result.customer.email} (Total: $${result.totalAmount})`
+    );
   }
+
+  return result;
 }

@@ -290,3 +290,9 @@ model Payment {
   @@index([invoiceId, paymentDate])
   @@map("payments")
 }
+
+// Atomic counters for document numbers (INV-0001, SUB-0001). See src/lib/sequence.ts
+model Sequence {
+  name  String @id
+  value Int
+}
